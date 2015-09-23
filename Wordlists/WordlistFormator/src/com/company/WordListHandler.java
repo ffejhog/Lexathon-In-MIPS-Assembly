@@ -18,8 +18,14 @@ public class WordListHandler {
     Scanner in;
     ArrayList<String> data = new ArrayList<String>();
     ArrayList<String> signatureData = new ArrayList<String>();
-    public WordListHandler(Scanner fileInput){
+
+    public WordListHandler(Scanner fileInput, int max, int min){
         in = fileInput;
+        loadToArraylist();
+        removeUnused(max, min);
+        sortByLength();
+        generateSignatures();
+
     }
 
     public void loadToArraylist(){
@@ -49,19 +55,8 @@ public class WordListHandler {
 
     }
 
-    private Character[] toCharacterArray( String s ) {
-
-        if ( s == null ) {
-            return null;
-        }
-
-        int len = s.length();
-        Character[] array = new Character[len];
-        for (int i = 0; i < len ; i++) {
-            array[i] = new Character(s.charAt(i));
-        }
-
-        return array;
+    public void sortByLength(){
+        data.sort(new stringLengthComparator());
     }
 
     public void printArrayList(){

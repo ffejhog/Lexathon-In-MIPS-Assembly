@@ -6,6 +6,11 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Arrays;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 /**
  * Created by Jeff on 9/18/2015.
  */
@@ -34,7 +39,12 @@ public class WordListHandler {
     }
 
     public void generateSignatures(){
+        for(int i = 0; i<data.size();i++){
+            char[] chars = data.get(i).toCharArray();
+            Arrays.sort(chars);
+            signatureData.add(new String(chars));
 
+        }
 
 
     }
@@ -56,8 +66,27 @@ public class WordListHandler {
 
     public void printArrayList(){
         for(int i = 0; i <data.size(); i++){
-            System.out.println(data.get(i));
+            System.out.println(data.get(i) + " | " + signatureData.get(i) + " | " + data.get(i).length());
         }
 
+    }
+
+    public void generateWordlist(File file){
+        try{
+            if(!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fw = new FileWriter(file.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter((fw));
+            for(int i = 0; i<data.size();i++){
+                bw.write(signatureData.get(i) + " " + data.get(i) + " " + data.get(i).length() + "\n");
+            }
+            bw.close();
+            System.out.print("File Generated");
+
+        } catch (IOException e){
+            System.out.print("File failed to generate");
+            e.printStackTrace();
+        }
     }
 }

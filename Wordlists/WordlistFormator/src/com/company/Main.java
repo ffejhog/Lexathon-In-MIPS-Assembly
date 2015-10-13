@@ -8,9 +8,9 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            Scanner in = new Scanner(new File("D:\\SchoolOneDrive\\OneDrive - The University of Texas at Dallas\\Year2Semester1\\CS 3340\\GroupProjectCS3340\\Wordlists\\WordlistFormator\\out\\production\\WordlistFormator\\com\\company\\Wordlist1.txt"));
-            WordListHandler wordListHandler = new WordListHandler(in, 9, 4);
-            wordListHandler.generateWordlist(new File("D:\\SchoolOneDrive\\OneDrive - The University of Texas at Dallas\\Year2Semester1\\CS 3340\\GroupProjectCS3340\\Wordlists\\WordlistFormator\\out\\production\\WordlistFormator\\com\\company\\Wordlist1output.txt"));
+            Scanner in = new Scanner(new File("Wordlist1.txt"));
+            WordListHandler wordListHandler = new WordListHandler(in, 9, 4, false); //(Scanner, Max Length, Min Length, Sort by length)
+            wordListHandler.generateWordlist(new File("Wordlist1output.txt"));
         } catch (FileNotFoundException e){
             e.printStackTrace();
         }

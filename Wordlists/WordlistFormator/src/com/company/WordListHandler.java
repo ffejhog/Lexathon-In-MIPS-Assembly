@@ -19,12 +19,13 @@ public class WordListHandler {
     ArrayList<String> data = new ArrayList<String>();
     ArrayList<String> signatureData = new ArrayList<String>();
 
-    public WordListHandler(Scanner fileInput, int max, int min){
+    public WordListHandler(Scanner fileInput, int max, int min, boolean sortLength){
         in = fileInput;
         loadToArraylist();
         removeUnused(max, min);
-        sortByLength();
-        generateSignatures();
+        if(sortLength) {
+            sortByLength();
+        }
 
     }
 
@@ -44,27 +45,12 @@ public class WordListHandler {
         }
     }
 
-    public void generateSignatures(){
-        for(int i = 0; i<data.size();i++){
-            char[] chars = data.get(i).toCharArray();
-            Arrays.sort(chars);
-            signatureData.add(new String(chars));
-
-        }
-
-
-    }
 
     public void sortByLength(){
         data.sort(new stringLengthComparator());
     }
 
-    public void printArrayList(){
-        for(int i = 0; i <data.size(); i++){
-            System.out.println(data.get(i) + " | " + signatureData.get(i) + " | " + data.get(i).length());
-        }
 
-    }
 
     public void generateWordlist(File file){
         try{
@@ -74,7 +60,7 @@ public class WordListHandler {
             FileWriter fw = new FileWriter(file.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter((fw));
             for(int i = 0; i<data.size();i++){
-                bw.write(signatureData.get(i) + " " + data.get(i) + " " + data.get(i).length() + "\n");
+                bw.write(data.get(i).toUpperCase() + "\n");
             }
             bw.close();
             System.out.print("File Generated");

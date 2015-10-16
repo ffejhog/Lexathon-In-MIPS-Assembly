@@ -15,8 +15,12 @@ public class wordListSearch
         while(scanner.hasNextLine()){
             String line = scanner.nextLine();
             int counter = 0;
+            boolean required = false;
             for(int i = 0; i < line.length(); i++){
-                for(int j = 0; j<input.length;j++){
+                if(line.charAt(i)==input[0]){
+                    required = true;
+                }
+                for(int j = 1; j<input.length;j++){
                     if(line.charAt(i) == input[j]){
                         counter++;
                         break;
@@ -24,7 +28,7 @@ public class wordListSearch
                 }
 
             }
-            if(counter==line.length()){
+            if(counter==line.length() && required){
                 outputList.add(line);
             }
         }

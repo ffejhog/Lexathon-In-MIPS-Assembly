@@ -4,21 +4,27 @@ import java.util.*;
 
 public class Main
 {
+
 	public static void main(String[] args)
 	{
-		letterGen gen = new letterGen();
         ArrayList<String> out = new ArrayList<String>();
-		char[] letters = gen.generateChar();
-        try {
-            do {
+        char[] letters;
+
+        do {
+
+            letterGen gen = new letterGen();
+		    letters = gen.generateChar();
+            try {
+
                 wordListSearch search = new wordListSearch(new File("D:\\ProgrammingProjects\\cs3340groupproject\\Wordlists\\WordList4.txt"));
                 out = search.searchList(letters);
                 //char[] test = {'B', 'R', 'W', 'O', 'N', 'S', 'A', 'L', 'R'};
 
-            }while(out.size()<10);
-        } catch (IOException e){
-            e.printStackTrace();
-        }
+
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }while(out.size()<100);
         for(int i = 0;i<letters.length; i++){
             System.out.println(letters[i]);
         }

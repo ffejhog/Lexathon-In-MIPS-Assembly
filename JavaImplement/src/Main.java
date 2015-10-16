@@ -11,7 +11,7 @@ public class Main
 		char[] letters = gen.generateChar();
         try {
             do {
-                wordListSearch search = new wordListSearch(new File("D:\\ProgrammingProjects\\cs3340groupproject\\Wordlists\\Wordlist1.txt"));
+                wordListSearch search = new wordListSearch(new File("D:\\ProgrammingProjects\\cs3340groupproject\\Wordlists\\WordList4.txt"));
                 out = search.searchList(letters);
                 //char[] test = {'B', 'R', 'W', 'O', 'N', 'S', 'A', 'L', 'R'};
 

@@ -6,7 +6,7 @@ import java.util.Scanner;
 public class wordListSearch
 {
     Scanner scanner;
-    CharSequence comparitor;
+
     public wordListSearch(File input) throws FileNotFoundException {
         scanner = new Scanner(input);
     }
@@ -16,11 +16,13 @@ public class wordListSearch
             String line = scanner.nextLine();
             int counter = 0;
             for(int i = 0; i < line.length(); i++){
-
-                comparitor = Character.toString(input[i]);
-                if(line.contains(comparitor)){
-                    counter++;
+                for(int j = 0; j<input.length;j++){
+                    if(line.charAt(i) == input[j]){
+                        counter++;
+                        break;
+                    }
                 }
+
             }
             if(counter==line.length()){
                 outputList.add(line);

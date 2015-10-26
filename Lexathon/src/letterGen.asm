@@ -15,6 +15,14 @@ Letters: .space 9 # Will store the nine generated letters
 # Program only uses temp registers, so it is the duty of the calling function to save any required data.
 # --------------------------------------------------------------------------------------------------------
 Main:
+# Save $s0, and #s1 by convention
+li $s0, 23
+li $s1, 24
+addi $sp, $sp -8
+sw $s0, 4($sp)
+sw $s1, 0($sp)
+
+# Main Stuff
 la $s0, Letters # Load Letters address into $s0
 jal genLetter # Generate one random letter into $s1
 sb $s1, 0($s0) # Save first required letter into Letters first byte
@@ -82,3 +90,7 @@ jr $ra
 
 
 End:
+# Restore from stack to $s0 and $s1
+lw $s1, 0($sp)
+lw $s0, 4($sp)
+addi $sp, $sp, 8

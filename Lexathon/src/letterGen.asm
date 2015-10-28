@@ -7,12 +7,11 @@
 # |	       3. Third-Ninth letters are randomly generated			  | 
 #  --------------------------------------------------------------------------------
 .data
-Letters: .space 9 # Will store the nine generated letters
+Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
 
 .text
 # --------------------------------------------------------------------------------------------------------
 # Program has no required parameters, and stores all results to memory location labeled "Letters"
-# Program only uses temp registers, so it is the duty of the calling function to save any required data.
 # --------------------------------------------------------------------------------------------------------
 Main:
 # Save $s0, and #s1 by convention

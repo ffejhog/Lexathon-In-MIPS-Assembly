@@ -1,5 +1,11 @@
-#### CS3340GroupProject
+# CS3340GroupProject
 
--Wordlists/* Contains different generated English word to use for dictionary generation. <s>Eventually, these lists will be shortened by removing words based on various conditions (E.g. Containing apostrophes)</s> Code to do this wordlist generation is now implemented
+#### JavaImplement/src - Contains source for a basic Java Implementation of backend word list lookups
 
-http://rogerdudler.github.io/git-guide/
+#### Lexathon/src - Contains source for MIPS assembly based code for the project. 
+
+#### Wordlists - Contains the wordlist file for this project.
+
+
+
+[Here is a quick simple guide for git](http://rogerdudler.github.io/git-guide/)

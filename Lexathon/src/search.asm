@@ -40,6 +40,10 @@ main:
 	move $a1, $s2
 	jal search
 	
+	move $a0, $v0
+	li $v0, 1
+	syscall
+	
 	#Exit
 	li $v0, 10
 	syscall
@@ -123,8 +127,10 @@ search:
 		lw $t1, 4($s4)
 		lw $t2, 8($s4)
 		
-		#initialize word flag and index
+		#initialize word flag, req. char flag, req. char, and index
 		li $t7, 1
+		move $a0, $zero
+		lb $a1, ($s1)
 		move $t3, $s2
 		#Inner loop (character loop)
 		searchLoop1:
@@ -136,6 +142,10 @@ search:
 			#Skip histogram stuff if the word is flagged bad
 			beq $t7, $zero, searchLoop1Incr
 			
+			bne $a1, $t4, searchLoop0Comp
+			li $a0, 1
+			
+			searchLoop0Comp:
 			#Get Index
 			subi $t5, $t4, 65
 			#Branch to modify whichever word contains char $t2
@@ -224,6 +234,9 @@ search:
 		#We finished a word, pad it with zero
 		searchEndLoop1:
 		sb $zero, ($t3)
+		
+		#Make sure the word contains the required character
+		and $t7, $a0, $t7
 		#If the word doesn't fit our histogram, just cleanup and move on to next one
 		beq $t7, $zero, searchLoop0Cleanup
 		#Otherwise, override our current wordList index (meaning we don't want to

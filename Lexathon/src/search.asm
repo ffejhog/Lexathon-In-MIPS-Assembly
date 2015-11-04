@@ -19,7 +19,7 @@ histogram_list: .word 0, 0, 0 #Three words used for each character list's histog
 				#avoidd two words sharing bits for a particular
 				#character count.
 file_name: .asciiz "wordlist.txt" #Name of the dictionary text file
-temp_chars:	.asciiz "SADTEISAL" #test string, delete in final version plz
+temp_chars:	.asciiz "BETHAILRS" #test string, delete in final version plz
 words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
 dictionary: .space 100000 #~100 KB
 

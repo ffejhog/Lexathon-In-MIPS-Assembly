@@ -1,10 +1,10 @@
 #  --------------------------------------------------------------------------------
-# | FILE: letterGen.asm								  |
-# | AUTHOR: Jeffrey Neer							  |
+# | FILE: letterGen.asm								  							  |
+# | AUTHOR: Jeffrey Neer							 							  |
 # | DESCRIPTION: Contains subroutine that generates nine letters based on 3 rules.|
-# |	       1. FIrst letter is completely random, and is always required	  |
-# |	       2. Second letter is always a vowel				  |
-# |	       3. Third-Ninth letters are randomly generated			  | 
+# |	       1. FIrst letter is completely random, and is always required	  		  |
+# |	       2. Second letter is always a vowel				 					  |
+# |	       3. Third-Ninth letters are randomly generated						  | 
 #  --------------------------------------------------------------------------------
 .data
 Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
@@ -13,7 +13,7 @@ Letters: .space 10 # Will store the nine generated letters(Plus one null termina
 # --------------------------------------------------------------------------------------------------------
 # Program has no required parameters, and stores all results to memory location labeled "Letters"
 # --------------------------------------------------------------------------------------------------------
-Main:
+genMain:
 # Save $s0, and #s1 by convention
 li $s0, 23
 li $s1, 24
@@ -35,7 +35,7 @@ sb $s1, 1($s0) # Save second letter into Letters second byte (This letter is a v
 addi $t0, $s0, 2 # store Address of Letters into $t0(factoring the first two bytes have to letters already in them)
 li $t1, 7 # i=7
 letterGenLoop:
-beq $t1, 0, End # if i==0 goto End ********** THIS IS THE EXIT FOR THE LOOP **********
+beq $t1, 0, genEnd # if i==0 goto genEnd ********** THIS IS THE EXIT FOR THE LOOP **********
 subi $t1, $t1, 1 # i--
 jal genLetter # Generate one random letter into $s1
 sb $s1, 0($t0) # Store into the 3-9th memory location
@@ -88,7 +88,7 @@ jr $ra
 
 
 
-End:
+genEnd:
 # Restore from stack to $s0 and $s1
 lw $s1, 0($sp)
 lw $s0, 4($sp)

@@ -13,8 +13,6 @@
 # |				Non-number inputs ignored			  |
 #  --------------------------------------------------------------------------------
 
-#WARNING: COMMENT-LESS NIGHTMARE AHEAD, OPTIMIZATION IN PROCESS
-
 .data
 
 Hud1:		.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','0','0','0','0','0','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
@@ -29,31 +27,86 @@ Hud8: 		.asciiz						 "---------------------------------------------------------
 NewLine:		.asciiz		"\n"
 
 Input:			.byte		0:10
-LettersUse:		.word		0			#Bits 0 to 8 are true if letter is in use
 
 Letters:		.byte		'A','B','C','D','E','F','G','H','I'				
 
 #REGISTER USE:
 # $s0 - Timer
-# $s1 - Input
+# $s1 - Logic Bits (0-8: Input Bits, 9-31 UNUSED)
+# $s2 - Start Time: Time the countdown clock started
 
 .text
+	li $s0,6000			#Default Timer Setup
+
 
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
-	li $s0,0x00000000		#First 9 bits used for key use.
-	li $s1,0x00000000		#Used for timer value (in seconds)
-
 	lw $t1,0($t0)
 	ori $t1,$t1,0x00000002		#Check Bit Position 1 (Interrupt-Enable Bit) true
 	sw $t1,0($t0)
 	
-	Redraw:
+	li $v0, 30			#Find current system time
+	syscall
+	add $s2,$zero,$a0		#Move current system time to start time
+	
+	
+	
+	Redraw:				#Return here whenever you need to redraw screen
 	jal DrawScreen
 
-	MainLoop:
+	MainLoop:			#Standard waiting and time checking while player isn't providing input
+	
+	#-------------------------------------------------------------------------------------------------------#
+	#					Time Wasting Loop						#				#
+	#	Wastes a certain number of cycles on addition executions. These are desireable for their	#
+	#	consistent execution time.									#
+	#-------------------------------------------------------------------------------------------------------#
+	
+	#NOTE: COULD BE OPTMIZED BY ADJUSTING CYLCE LENGTH TO DESIRED WAIT TIME ON PRESENT SYSTEM
+	
+	li $t5,450			#This value is ARBITRARY, measures 1 ms on Julian's computer but could be different for others!
+	WasteTime:
+	addi $t5,$t5,-1
+	bne $t5,$zero,WasteTime
+
+	
+	jal CheckTime
+
+	
+	
+	
 	
 	j MainLoop
 
+#---------------------------------------------------------------------------------------------------------------#
+#	Subroutine: CheckTime											#
+#		Use: 		Checks the number of miliseconds that have passed since the program started 	#
+#				and generates a trap if the timer has run out.					#
+#														#
+#		Inputs:		NONE										#
+#		Ouptuts: 	NONE										#
+#														#
+#		Notes: 		Debug this to make sure the user can't prevent check by holding num key, etc.	#
+#				Time can be added or taken away by changing max timer in $s0			#
+#---------------------------------------------------------------------------------------------------------------#
+
+CheckTime:
+	li $v0, 30	#Fetches system time, miliseconds since Jan 1 1970
+	syscall
+	sub $t1,$a0,$s2
+	sub $t1,$s0,$t1
+
+	tlti $t1,1
+	
+	jr $ra
+
+#---------------------------------------------------------------------------------------------------------------#
+#	Subroutine: DrawScreen											#
+#		Use: 		Redraws screen with stored string values in data section.			#
+#														#
+#		Inputs:		NONE										#
+#		Ouptuts: 	NONE										#
+#														#
+#---------------------------------------------------------------------------------------------------------------#
 
 DrawScreen:
 	
@@ -150,14 +203,15 @@ DrawScreen:
 	syscall
 	
 	jr $ra
-	
-	
-
 
 Exit:
 
 
 .ktext 0x80000180
+
+	#---------------------------------------#
+	#	Keyboard Input Handler		#
+	#---------------------------------------#
 
 	mfc0 $k0,$13			#Retrieve Cause
 	andi $k0,$k0,0x0000017C		#Transfer 1s on bits 2-6 and 8
@@ -167,7 +221,7 @@ Exit:
 	lb $a0,0($k1)
 	
 	
-	slti $k0,$a0,58
+	slti $k0,$a0,58			# Check that input is in range of numbers 0 to 9
 	beq $k0,$zero,UnusedKey
 	li $k0,47
 	slt $k0,$k0,$a0
@@ -177,26 +231,22 @@ Exit:
 	slt $k1,$a0,$zero
 	bne $k1,$zero,EnterEvent
 	
-	li $k1,1
+	li $k1,1			#Check that the input key is not in use
 	sllv $k1,$k1,$a0
-	la $k0,LettersUse
-	lw $k0,0($k0)
-	and $k1,$k1,$k0
+	and $k1,$k1,$s1
 	
 	bne $k1,$zero,LetterInUse
 	
-	li $k1,1
+	li $k1,1			#Now flag that digit as being in use
 	sllv $k1,$k1,$a0
+	or $s1,$k1,$s1
 	
-	or $k1,$k1,$k0
-	la $k0,LettersUse
-	sw $k1,0($k0)
-	
-	la $k0, Letters
+	la $k0, Letters			#Add the indicated letter to the input string
 	add $k0,$k0,$a0
 	lb $a0,0($k0)
 	
-	la $k0,Input
+	#NOTE: COULD BE OPTIMIZED IF WE SAVE THE LENGTH OF INPUT
+	la $k0,Input			#Finds the end of the string. 
 	FindInput:
 	lb $k1,0($k0)
 	addi $k0,$k0,1
@@ -211,13 +261,18 @@ Exit:
 	
 	eret
 	
+	#-----------------------------------------------#
+	#	Input Letter Already Being Used		#
+	#-----------------------------------------------#
 LetterInUse:
 	eret
 	
+	#-------------------------------#
+	#	User Hit Enter Key	#
+	#-------------------------------#
 EnterEvent:
 	
-	la $k0,LettersUse
-	sw $zero,0($k0)
+	li $s1,0
 	
 	la $k0,Input
 	sb $zero,0($k0)
@@ -225,12 +280,19 @@ EnterEvent:
 	la $k0,Redraw
 	mtc0 $k0,$14
 
+	#-------------------------------#
+	#	Non-Implemented Key	#
+	#-------------------------------#
 UnusedKey:
 	eret
 
-NotKeyboard:
+
+NotKeyboard:	#Continue To Other Handlers
 
 
+	#-------------------------------#
+	#	Timer End Detected	#
+	#-------------------------------#
 li $v0,4
 la $a0,Output1
 syscall

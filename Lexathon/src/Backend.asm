@@ -1,0 +1,502 @@
+#  --------------------------------------------------------------------------------
+#   FILE: Backend.asm								  							  
+#   AUTHOR: Jeffrey Neer, Christian Leithner							 							  
+#   DESCRIPTION: Contains subroutine that generates nine letters based on 3 rules.
+#  	            1. First letter is completely random, and is always required	  		  
+# 	            2. Second letter is always a vowel				 					  
+#  	            3. Third-Ninth letters are randomly generated	
+#		 Contains the "search" subroutine. This subroutine
+# 		 will search the specified dictionary for words that contains
+# 		 some or all of the characters in the provided string. This
+# 		 file is intented to be temporary, its contents should be
+# 		 merged with files containing other dictionary operations.					  
+#  --------------------------------------------------------------------------------
+.data
+Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
+histogram_list: .word 0, 0, 0 #Three words used for each character list's histogram
+				#IMPORTANT: Each word in "histogram_list" will only
+				#contain AT MOST 30 bits of information. At least
+				#the final two bits in each word are UNUSED. This
+				#avoidd two words sharing bits for a particular
+				#character count.
+file_name: .asciiz "wordlist.txt" #Name of the dictionary text file
+temp_chars:	.asciiz "BETHAILRS" #test string, delete in final version plz
+words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
+dictionary: .space 100000 #~100 KB
+
+
+.text
+#Main
+main:
+	#Load file
+	la $a0, file_name
+	jal loadFile
+	move $s0, $v0
+	move $s1, $v1
+	
+	#Gen randoms and search
+backendSearch:
+	jal genMain
+	la $s2, Letters
+	move $a0, $s1
+	move $a1, $s2
+	jal search
+	jal search
+	#blt $v0, 30, backendSearch # used to make sure more than 30 words are found
+	
+	
+	
+	move $a0, $v0
+	li $v0, 1
+	syscall
+	
+	#Exit
+	li $v0, 10
+	syscall
+	
+	
+	
+	
+	
+	
+	
+
+# "loadFile" subroutine
+# PARAMETERS:		$a0 = address of the name of the ".txt" file to open.
+#				All words inside MUST be upper-case.
+# SAVED REGISTERS:	none
+# DESCRIPTION:		Loads the file's contents into data labeled "dictionary".
+#			**IMPORTANT**: file WILL NOT LOAD unless it is in the
+#			SAME DIRECTORY as your MARS .jar!!!!!!!
+# RETURNS:		$v0 = Number of bytes read from the file, or -1 if failed
+#				to open the file.
+#			$v1 = Address of the label "dictionary".
+loadFile:
+	#Load address of space
+	la $t0, dictionary
+	#Open file
+	move $a1, $zero
+	li $v0, 13
+	syscall
+	#Read the entire file and store in dictionary
+	move $a0, $v0
+	move $a1, $t0
+	li $a2, 100000
+	li $v0, 14
+	syscall
+	#Move byte count
+	move $t1, $v0
+	#Close file
+	li $v0, 16
+	syscall
+	#Return
+	move $v0, $t1
+	move $v1, $t0
+	jr $ra
+
+# "search" subroutine
+# PARAMETERS: 		$a0 = address of the data labeled "dictionary"
+#			$a1 = the memory address of the starting character
+#				in the list of game characters. This
+#				character should be the required character.
+# SAVED REGISTERS:	$s0, $s1, $s2, $s3, $s4, $ra
+# DESCRIPTION:		Populates data label "words" with list of at most
+#			100 words containing some or all of the characters
+#			that were most recently generated.
+# RETURNS:		$v0 = Number of words found in the word list.
+search:
+	#Save registers
+	addi $sp, $sp, -24
+	sw $s0, 20($sp)
+	sw $s1, 16($sp)
+	sw $s2, 12($sp)
+	sw $s3, 8($sp)
+	sw $s4, 4($sp)
+	sw $ra, ($sp)
+	
+	#Store arguements
+	move $s0, $a0
+	move $s1, $a1
+	
+	#Load in the word space
+	la $s2, words
+	#Clear our word space
+	move $a0, $s2
+	li $a1, 1000
+	jal clearSpace
+	
+	#Create histogram and store its address
+	move $a0, $s1
+	jal histogram
+	move $s4, $v0
+
+	#This is our word counter
+	move $v0, $zero
+	
+	#Outer loop (word loop)
+	searchLoop0:
+		#Create temporary histogram registers
+		lw $t0, ($s4)
+		lw $t1, 4($s4)
+		lw $t2, 8($s4)
+		
+		#initialize word flag, req. char flag, req. char, and index
+		li $t7, 1
+		move $a0, $zero
+		lb $a1, ($s1)
+		move $t3, $s2
+		#Inner loop (character loop)
+		searchLoop1:
+			#Load character
+			lb $t4, ($s0)
+			#Exit inner loops if we encounter line carriage or EOF
+			beq $t4, 13, searchEndLoop1
+			beq $t4, 0, searchEndLoop1F
+			#Skip histogram stuff if the word is flagged bad
+			beq $t7, $zero, searchLoop1Incr
+			
+			bne $a1, $t4, searchLoop0Comp
+			li $a0, 1
+			
+			searchLoop0Comp:
+			#Get Index
+			subi $t5, $t4, 65
+			#Branch to modify whichever word contains char $t2
+			bgt $t5, 19, searchThirdWord
+			bgt $t5, 9, searchSecondWord
+			j searchFirstWord
+			
+			searchThirdWord:
+			#Subtract 19 from our index [20, 26]
+			subi $t5, $t5, 19
+			#Multiply it by 3 by shifting once and adding itself
+			move $t6, $t5
+			sll $t5, $t5, 1
+			add $t5, $t5, $t6
+			#Subtract it from 32 to get shift amount
+			li $t6, 32
+			sub $t5, $t6, $t5
+			#Get character count by masking
+			li $t6, 7
+			sllv $t6, $t6, $t5
+			and $t6, $t2, $t6
+			#If it's zero, the word won't work
+			beq $t6, $zero, searchNoMatch 
+			#If it's not zero, we need to decrement our temp histogram
+			li $t6, 1
+			sllv $t6, $t6, $t5
+			sub $t2, $t2, $t6
+			j searchLoop1Incr
+			
+			searchSecondWord:
+			#Subtract 9 from our index [10, 19]
+			subi $t5, $t5, 9
+			#Multiply it by 3 by shifting once and adding itself
+			move $t6, $t5
+			sll $t5, $t5, 1
+			add $t5, $t5, $t6
+			#Subtract it from 32 to get shift amount
+			li $t6, 32
+			sub $t5, $t6, $t5
+			#Get character count by masking
+			li $t6, 7
+			sllv $t6, $t6, $t5
+			and $t6, $t1, $t6
+			#If it's zero, the word won't work
+			beq $t6, $zero, searchNoMatch 
+			#If it's not zero, we need to decrement our temp histogram
+			li $t6, 1
+			sllv $t6, $t6, $t5
+			sub $t1, $t1, $t6
+			j searchLoop1Incr
+			
+			searchFirstWord:
+			#Add 1 to our index
+			addi $t5, $t5, 1
+			#Multiply our index by 3 by shifting once and adding itself
+			move $t6, $t5
+			sll $t5, $t5, 1
+			add $t5, $t5, $t6
+			#Subtract it from 32 to get shift amount
+			li $t6, 32
+			sub $t5, $t6, $t5
+			#Get character count by masking
+			li $t6, 7
+			sllv $t6, $t6, $t5
+			and $t6, $t0, $t6
+			#If it's zero, the word won't work
+			beq $t6, $zero, searchNoMatch 
+			#If it's not zero, we need to decrement our temp histogram
+			li $t6, 1
+			sllv $t6, $t6, $t5
+			sub $t0, $t0, $t6
+			j searchLoop1Incr
+			
+			#If the word contains letters not allowed by our histogram, set flag to false
+			searchNoMatch:
+			move $t7, $zero
+			searchLoop1Incr:
+			sb $t4, ($t3)
+			addi $t3, $t3, 1
+			addi $s0, $s0, 1
+			j searchLoop1
+			
+		#We are done with dictionary
+		searchEndLoop1F:
+		li $t8, 1
+		#We finished a word, pad it with zero
+		searchEndLoop1:
+		sb $zero, ($t3)
+		
+		#Make sure the word contains the required character
+		and $t7, $a0, $t7
+		#If the word doesn't fit our histogram, just cleanup and move on to next one
+		beq $t7, $zero, searchLoop0Cleanup
+		#Otherwise, override our current wordList index (meaning we don't want to
+		#override the word we just processed)
+		addi $t3, $t3, 1
+		move $s2, $t3
+		#Increment our word count
+		addi $v0, $v0, 1
+		
+		#Cleanup data for next word
+		searchLoop0Cleanup:
+		#Reset our word flag
+		li $t7, 1
+		#Skip new-line character
+		addi $s0, $s0, 2
+		#We have reached end of dictiionary if $t8 = 1
+		bne $t8, 1, searchLoop0
+	
+	#Reload registers and return
+	lw $ra, ($sp)
+	lw $s4, 4($sp)
+	lw $s3, 8($sp)
+	lw $s2, 12($sp)
+	lw $s1, 16($sp)
+	lw $s0, 20($sp)
+	addi $sp, $sp, 24
+	jr $ra
+
+# "clearSpace" subroutine
+# PARAMETERS:		$a0 = address of the head of the memory space
+#			$a1 = size of the space to be cleared
+# SAVED REGISTERS: 	none
+# DESCRIPTION:		Sets the first {$a1} bytes of the space,
+#			headed by address {$a0}, to 0.
+# RETURNES:		void
+clearSpace:
+	#Create a temporary copy of $a0
+	move $t0, $a0
+	add $t1, $zero, $zero
+	clearLoop0:
+		#Exit loop when we hit length
+		beq $t1, $a1, clearDone
+		#Set byte and increment 
+		sb $zero, ($t0)
+		addi $t0, $t0, 1
+		addi $t1, $t1, 1
+		j clearLoop0
+	clearDone:
+	jr $ra
+
+# "histogram" subroutine
+# PARAMETERS: 		$a0 = address of first character in the list
+#			of characters to create a histogram with.
+# SAVED REGISTERS: 	$s0, $s1, $ra
+# DESCRIPTION:		Creates a histogram character count using three
+#			bits per character. These counts will be stored
+#			in the space allocated for the data label
+#			"histogram_list".
+# RETURNS:		$v0 = address of data label "histogram_list"
+histogram:
+	#Store registers
+	addi $sp, $sp, -12
+	sw $s0, 8($sp)
+	sw $s1, 4($sp)
+	sw $ra, ($sp)
+	
+	#Create temp copy of char list address
+	move $s0, $a0
+	#Load address of our histogram list
+	la $s1, histogram_list
+	#Clear histogram_list space
+	move $a0, $s1
+	li $a1, 12
+	jal clearSpace
+	#Loop through the 9 characters
+	histLoop0:
+		#Load character
+		lb $t2, ($s0)
+		#Break loop if character is null
+		beq $t2, 0, histDone
+		#Store alphabet index
+		subi $t3, $t2, 65
+		#Branch to modify whichever word contains char $t2
+		bgt $t3, 19, histThirdWord
+		bgt $t3, 9, histSecondWord
+		j histFirstWord
+		
+		histThirdWord:
+		#Load the third word
+		lw $t4, 8($s1)
+		#Subtract 19 from our index [20, 26]
+		subi $t3, $t3, 19
+		#Multiply it by 3 by shifting once and adding itself
+		move $t5, $t3
+		sll $t3, $t3, 1
+		add $t3, $t3, $t5
+		#Subtract it from 32 to get shift amount
+		li $t5, 32
+		sub $t3, $t5, $t3
+		#Shift the number 1 to the left by shift amount
+		li $t5, 1
+		sllv $t3, $t5, $t3
+		#Add the bits
+		add $t4, $t4, $t3
+		#store the word with new character count back
+		sw $t4, 8($s1)
+		j histLoop0BodyEnd
+		
+		histSecondWord:
+		#Load the second word
+		lw $t4, 4($s1)
+		#Subtract 9 from our index [10, 19]
+		subi $t3, $t3, 9
+		#Multiply it by 3 by shifting once and adding itself
+		move $t5, $t3
+		sll $t3, $t3, 1
+		add $t3, $t3, $t5
+		#Subtract it from 32 to get shift amount
+		li $t5, 32
+		sub $t3, $t5, $t3
+		#Shift the number 1 to the left by shift amount
+		li $t5, 1
+		sllv $t3, $t5, $t3
+		#Add the bits
+		add $t4, $t4, $t3
+		#store the word with new character count back
+		sw $t4, 4($s1)
+		j histLoop0BodyEnd
+		
+		histFirstWord:
+		
+		#Load the first word
+		lw $t4, ($s1)
+		#Add 1 to our index
+		addi $t3, $t3, 1
+		#Multiply it by 3 by shifting once and adding itself
+		move $t5, $t3
+		sll $t3, $t3, 1
+		add $t3, $t3, $t5
+		#Subtract it from 32 to get shift amount
+		li $t5, 32
+		sub $t3, $t5, $t3
+		#Shift the number 1 to the left 
+		li $t5, 1
+		sllv $t3, $t5, $t3
+		#Add the bits
+		add $t4, $t4, $t3
+		#store the word with new character count back
+		sw $t4, ($s1)
+		
+		histLoop0BodyEnd:
+		#Increment to next character
+		addi $s0, $s0, 1
+		j histLoop0
+	histDone:
+	#Move label address to $v0 and return
+	move $v0, $s1
+	
+	#Load saved registers
+	lw $s0, 8($sp)
+	lw $s1, 4($sp)
+	lw $ra, ($sp)
+	addi $sp, $sp, 12
+	jr $ra
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------
+# Program has no required parameters, and stores all results to memory location labeled "Letters"
+# --------------------------------------------------------------------------------------------------------
+genMain:
+# Save $s0, and #s1 by convention
+addi $sp, $sp -12
+sw $ra , 8($sp)
+sw $s0, 4($sp)
+sw $s1, 0($sp)
+
+# Main Stuff
+la $s0, Letters # Load Letters address into $s0
+jal genLetter # Generate one random letter into $s1
+sb $s1, 0($s0) # Save first required letter into Letters first byte
+jal genVowel
+sb $s1, 1($s0) # Save second letter into Letters second byte (This letter is a vowel)
+
+# ----------------------------------------------
+# This loop Generates the last 7 random letters
+# ----------------------------------------------
+
+addi $t0, $s0, 2 # store Address of Letters into $t0(factoring the first two bytes have to letters already in them)
+li $t1, 7 # i=7
+letterGenLoop:
+beq $t1, 0, genEnd # if i==0 goto genEnd ********** THIS IS THE EXIT FOR THE LOOP **********
+subi $t1, $t1, 1 # i--
+jal genLetter # Generate one random letter into $s1
+sb $s1, 0($t0) # Store into the 3-9th memory location
+addi $t0, $t0, 1 #Incement the address so the next character is stored in the right place
+j letterGenLoop # Loop again
+
+
+
+
+# ----------------------------------------
+# This method generates one random letter
+# Returns random letter in $s1
+# ----------------------------------------
+genLetter:
+li $a1, 26 # Sets upper bound of random number generation as 26
+li $v0, 42 # Sets syscall to generate sudo-random number
+syscall # Result stored in $a0
+addi $s1, $a0, 65 # puts random number(Plus the offset to account for ascii) into #s1
+jr $ra # Return to calling function
+
+# ----------------------------------------
+# This method generates one vowel letter
+# Returns vowel letter in $s1
+# ----------------------------------------
+genVowel:
+li $a1, 4 # Sets upper bound of random number generation as 4
+li $v0, 42 # Sets syscall to generate sudo-random number
+syscall # Result stored in $a0
+beq $a0, 0, vowela #Checks if $a0 == 0
+beq $a0, 1, vowele #Checks if $a0 == 1
+beq $a0, 2, voweli #Checks if $a0 == 2
+beq $a0, 3, vowelo #Checks if $a0 == 3
+beq $a0, 4, vowelu #Checks if $a0 == 4
+vowela: #Sets $s1 to 'a' and returns
+li $s1, 65
+jr $ra
+vowele:#Sets $s1 to 'e' and returns
+li $s1, 69
+jr $ra
+voweli:#Sets $s1 to 'i' and returns
+li $s1, 73
+jr $ra
+vowelo:#Sets $s1 to 'o' and returns
+li $s1, 79
+jr $ra
+vowelu:#Sets $s1 to 'u' and returns
+li $s1, 85
+jr $ra
+
+genEnd:
+# Restore from stack to $s0 and $s1
+lw $s1, 0($sp)
+lw $s0, 4($sp)
+lw $ra , 8($sp)
+addi $sp, $sp, 12
+jr $ra

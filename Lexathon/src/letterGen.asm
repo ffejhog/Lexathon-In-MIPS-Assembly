@@ -1,10 +1,10 @@
 #  --------------------------------------------------------------------------------
-# | FILE: letterGen.asm								  							  |
-# | AUTHOR: Jeffrey Neer							 							  |
-# | DESCRIPTION: Contains subroutine that generates nine letters based on 3 rules.|
-# |	       1. FIrst letter is completely random, and is always required	  		  |
-# |	       2. Second letter is always a vowel				 					  |
-# |	       3. Third-Ninth letters are randomly generated						  | 
+#   FILE: letterGen.asm								  							  
+#   AUTHOR: Jeffrey Neer							 							  
+#   DESCRIPTION: Contains subroutine that generates nine letters based on 3 rules.
+#  	       1. FIrst letter is completely random, and is always required	  		  
+# 	       2. Second letter is always a vowel				 					  
+#  	       3. Third-Ninth letters are randomly generated						  |
 #  --------------------------------------------------------------------------------
 .data
 Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)

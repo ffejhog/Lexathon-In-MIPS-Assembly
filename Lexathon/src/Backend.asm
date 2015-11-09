@@ -36,13 +36,13 @@ main:
 	
 	#Gen randoms and search
 backendSearch:
+	
 	jal genMain
 	la $s2, Letters
 	move $a0, $s1
 	move $a1, $s2
 	jal search
-	jal search
-	#blt $v0, 30, backendSearch # used to make sure more than 30 words are found
+	blt $v0, 15, backendSearch # used to make sure more than 30 words are found
 	
 	
 	
@@ -134,6 +134,7 @@ search:
 	move $v0, $zero
 	
 	#Outer loop (word loop)
+	move $t8, $zero
 	searchLoop0:
 		#Create temporary histogram registers
 		lw $t0, ($s4)

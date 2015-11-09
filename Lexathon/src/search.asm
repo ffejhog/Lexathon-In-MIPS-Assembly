@@ -39,6 +39,10 @@ main:
 	move $a0, $s1
 	move $a1, $s2
 	jal search
+	la $s2, temp_chars
+	move $a0, $s1
+	move $a1, $s2
+	jal search
 	
 	move $a0, $v0
 	li $v0, 1

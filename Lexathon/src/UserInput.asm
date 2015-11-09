@@ -15,7 +15,7 @@
 
 .data
 
-Hud1:		.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','0','0','0','0','0','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
+Hud1:		.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
 Hud2:		.asciiz						 "#									#"
 Hud3:		.asciiz						 "#			 _______ _______ _______			#"
 Hud4:		.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ',' ','H',' ',' ',' ','|',' ',' ',' ','I',' ',' ',' ','|','	','	','	','#',0
@@ -31,12 +31,12 @@ Input:			.byte		0:10
 Letters:		.byte		'A','B','C','D','E','F','G','H','I'				
 
 #REGISTER USE:
-# $s0 - Timer
+# $s0 - Timer (in seconds)
 # $s1 - Logic Bits (0-8: Input Bits, 9-31 UNUSED)
-# $s2 - Start Time: Time the countdown clock started
+# $s2 - Start Frame (when timer was last checked)
 
 .text
-	li $s0,6000			#Default Timer Setup
+	li $s0,60			#Default Timer Setup
 
 
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
@@ -44,7 +44,7 @@ Letters:		.byte		'A','B','C','D','E','F','G','H','I'
 	ori $t1,$t1,0x00000002		#Check Bit Position 1 (Interrupt-Enable Bit) true
 	sw $t1,0($t0)
 	
-	li $v0, 30			#Find current system time
+	li $v0, 30			#Fetches system time, miliseconds since Jan 1 1970
 	syscall
 	add $s2,$zero,$a0		#Move current system time to start time
 	
@@ -90,14 +90,82 @@ Letters:		.byte		'A','B','C','D','E','F','G','H','I'
 #---------------------------------------------------------------------------------------------------------------#
 
 CheckTime:
-	li $v0, 30	#Fetches system time, miliseconds since Jan 1 1970
+	li $v0, 30			#Fetches system time, miliseconds since Jan 1 1970
 	syscall
-	sub $t1,$a0,$s2
-	sub $t1,$s0,$t1
-
-	tlti $t1,1
+	sub $t0,$a0,$s2
+	
+	slti $t1,$t0,1000
+	bne $t1,$zero,NoFullSecond
+	subi $s0,$s0,1
+	
+	subi $t0,$t0,1000		#Make sure any few miliseconds over a second are retained on point of comparison
+	sub $s2,$a0,$t0
+	
+	addi $sp,$sp,-4			#Draw the appropriate timer
+	sw $ra,0($sp)
+	jal DrawScreen
+	lw $ra,0($sp)
+	addi $sp,$sp,4
+	
+	tlti $s0,1			#Generate a trap if the timer has run out
+	
+	NoFullSecond:
 	
 	jr $ra
+	
+	
+DrawTimer:
+	li $a0,48
+	li $v0,11
+
+	slti $t1,$s0,10000
+	bne $t1,$zero,NotFiveDigit
+	li $v0,1
+	move $a0,$s0
+	syscall
+	j TimerPrintDone
+	
+	NotFiveDigit:
+	syscall
+	
+	slti $t1,$s0,1000
+	bne $t1,$zero,NotFourDigit
+	li $v0,1
+	move $a0,$s0
+	syscall
+	j TimerPrintDone
+	
+	NotFourDigit:
+	syscall
+	
+	slti $t1,$s0,100
+	bne $t1,$zero,NotThreeDigit
+	li $v0,1
+	move $a0,$s0
+	syscall
+	j TimerPrintDone
+	
+	NotThreeDigit:
+	syscall
+	
+	slti $t1,$s0,10
+	bne $t1,$zero,NotTwoDigit
+	li $v0,1
+	move $a0,$s0
+	syscall
+	j TimerPrintDone
+	
+	NotTwoDigit:
+	syscall
+	li $v0,1
+	move $a0,$s0
+	syscall
+	j TimerPrintDone
+	
+	TimerPrintDone:
+	
+	jr $ra
+	
 
 #---------------------------------------------------------------------------------------------------------------#
 #	Subroutine: DrawScreen											#
@@ -117,6 +185,16 @@ DrawScreen:
 	li $v0,4
 	la $a0,NewLine
 	syscall
+	
+	li $v0,4
+	la $a0,Hud1
+	syscall
+	
+	addi $sp,$sp,-4			#Draw the appropriate timer
+	sw $ra,0($sp)
+	jal DrawTimer
+	lw $ra,0($sp)
+	addi $sp,$sp,4
 	
 	li $v0,4
 	la $a0,Hud1

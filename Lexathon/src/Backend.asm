@@ -34,6 +34,10 @@ main:
 	move $s0, $v0
 	move $s1, $v1
 	
+	li $v0, 30
+	syscall
+	move $s7, $a0
+	
 	#Gen randoms and search
 backendSearch:
 	
@@ -42,24 +46,26 @@ backendSearch:
 	move $a0, $s1
 	move $a1, $s2
 	jal search
-	blt $v0, 15, backendSearch # used to make sure more than 30 words are found
-	
-	
+	blt $v0, 15, backendSearch # used to make sure more than 15 words are found
 	
 	move $a0, $v0
+	li $v0, 1
+	syscall
+	
+	li $a0, 10
+	li $v0, 11
+	syscall
+	
+	li $v0, 30
+	syscall
+	
+	sub $a0, $a0, $s7
 	li $v0, 1
 	syscall
 	
 	#Exit
 	li $v0, 10
 	syscall
-	
-	
-	
-	
-	
-	
-	
 
 # "loadFile" subroutine
 # PARAMETERS:		$a0 = address of the name of the ".txt" file to open.
@@ -106,12 +112,15 @@ loadFile:
 # RETURNS:		$v0 = Number of words found in the word list.
 search:
 	#Save registers
-	addi $sp, $sp, -24
-	sw $s0, 20($sp)
-	sw $s1, 16($sp)
-	sw $s2, 12($sp)
-	sw $s3, 8($sp)
-	sw $s4, 4($sp)
+	addi $sp, $sp, -36
+	sw $s0, 32($sp)
+	sw $s1, 28($sp)
+	sw $s2, 24($sp)
+	sw $s3, 20($sp)
+	sw $s4, 16($sp)
+	sw $s5, 12($sp)
+	sw $s6, 8($sp)
+	sw $s7, 4($sp)
 	sw $ra, ($sp)
 	
 	#Store arguements
@@ -129,17 +138,23 @@ search:
 	move $a0, $s1
 	jal histogram
 	move $s4, $v0
-
+	
+	#These will be local copies of the histogram
+	lw $s5, ($s4)
+	lw $s6, 4($s4)
+	lw $s7, 8($s4)
+	
 	#This is our word counter
 	move $v0, $zero
+	#End of search flag
+	move $t8, $zero
 	
 	#Outer loop (word loop)
-	move $t8, $zero
 	searchLoop0:
 		#Create temporary histogram registers
-		lw $t0, ($s4)
-		lw $t1, 4($s4)
-		lw $t2, 8($s4)
+		move $t0, $s5
+		move $t1, $s6
+		move $t2, $s7
 		
 		#initialize word flag, req. char flag, req. char, and index
 		li $t7, 1
@@ -271,12 +286,15 @@ search:
 	
 	#Reload registers and return
 	lw $ra, ($sp)
-	lw $s4, 4($sp)
-	lw $s3, 8($sp)
-	lw $s2, 12($sp)
-	lw $s1, 16($sp)
-	lw $s0, 20($sp)
-	addi $sp, $sp, 24
+	lw $s7, 4($sp)
+	lw $s6, 8($sp)
+	lw $s5, 12($sp)
+	lw $s4, 16($sp)
+	lw $s3, 20($sp)
+	lw $s2, 24($sp)
+	lw $s1, 28($sp)
+	lw $s0, 32($sp)
+	addi $sp, $sp, 36
 	jr $ra
 
 # "clearSpace" subroutine

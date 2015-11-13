@@ -22,7 +22,7 @@ histogram_list: .word 0, 0, 0 #Three words used for each character list's histog
 file_name: .asciiz "wordlist.txt" #Name of the dictionary text file
 temp_chars:	.asciiz "BETHAILRS" #test string, delete in final version plz
 words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
-dictionary: .space 100000 #~100 KB
+dictionary: .space 450000 #~100 KB
 
 
 .text
@@ -30,6 +30,7 @@ dictionary: .space 100000 #~100 KB
 main:
 	#Load file
 	la $a0, file_name
+	la $a1, dictionary
 	jal loadFile
 	move $s0, $v0
 	move $s1, $v1
@@ -70,6 +71,7 @@ backendSearch:
 # "loadFile" subroutine
 # PARAMETERS:		$a0 = address of the name of the ".txt" file to open.
 #				All words inside MUST be upper-case.
+#			$a1 = address of the space to save data
 # SAVED REGISTERS:	none
 # DESCRIPTION:		Loads the file's contents into data labeled "dictionary".
 #			**IMPORTANT**: file WILL NOT LOAD unless it is in the
@@ -79,7 +81,7 @@ backendSearch:
 #			$v1 = Address of the label "dictionary".
 loadFile:
 	#Load address of space
-	la $t0, dictionary
+	move $t0, $a1
 	#Open file
 	move $a1, $zero
 	li $v0, 13

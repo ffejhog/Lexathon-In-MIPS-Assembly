@@ -19,17 +19,26 @@ histogram_list: .word 0, 0, 0 #Three words used for each character list's histog
 				#the final two bits in each word are UNUSED. This
 				#avoidd two words sharing bits for a particular
 				#character count.
-file_name: .asciiz "wordlist.txt" #Name of the dictionary text file
+file_name_dictionary: .asciiz "wordlist.txt" #Name of the dictionary text file
+file_name_9_letter: .asciiz "dictionary_9_letter_words.txt" #Name of the 9 letter word text file
 temp_chars:	.asciiz "BETHAILRS" #test string, delete in final version plz
 words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
-dictionary: .space 450000 #~100 KB
-
+dictionary: .space 450000 #~450 KB
+nine_letter_words: .space 150000 #~150 KB
 
 .text
 #Main
 main:
+	#Load 9 Letters to use for search
+	la $a0, file_name_9_letter
+	la $a1, nine_letter_words
+	jal loadFile
+	move $a0, $v1
+	jal genMain
+	
+
 	#Load file
-	la $a0, file_name
+	la $a0, file_name_dictionary
 	la $a1, dictionary
 	jal loadFile
 	move $s0, $v0
@@ -89,7 +98,7 @@ loadFile:
 	#Read the entire file and store in dictionary
 	move $a0, $v0
 	move $a1, $t0
-	li $a2, 116190
+	li $a2, 450000
 	li $v0, 14
 	syscall
 	#Move byte count
@@ -452,72 +461,44 @@ sw $s1, 0($sp)
 
 # Main Stuff
 la $s0, Letters # Load Letters address into $s0
-jal genLetter # Generate one random letter into $s1
-sb $s1, 0($s0) # Save first required letter into Letters first byte
-jal genVowel
-sb $s1, 1($s0) # Save second letter into Letters second byte (This letter is a vowel)
-
-# ----------------------------------------------
-# This loop Generates the last 7 random letters
-# ----------------------------------------------
-
-addi $t0, $s0, 2 # store Address of Letters into $t0(factoring the first two bytes have to letters already in them)
-li $t1, 7 # i=7
-letterGenLoop:
-beq $t1, 0, genEnd # if i==0 goto genEnd ********** THIS IS THE EXIT FOR THE LOOP **********
-subi $t1, $t1, 1 # i--
-jal genLetter # Generate one random letter into $s1
-sb $s1, 0($t0) # Store into the 3-9th memory location
-addi $t0, $t0, 1 #Incement the address so the next character is stored in the right place
-j letterGenLoop # Loop again
-
-
-
-
-# ----------------------------------------
-# This method generates one random letter
-# Returns random letter in $s1
-# ----------------------------------------
-genLetter:
-li $a1, 26 # Sets upper bound of random number generation as 26
+la $s1, nine_letter_words
+li $a1, 11619 # Sets upper bound of random number generation as 11619
 li $v0, 42 # Sets syscall to generate sudo-random number
 syscall # Result stored in $a0
-addi $s1, $a0, 65 # puts random number(Plus the offset to account for ascii) into #s1
-jr $ra # Return to calling function
+move $t0, $a0 #move random number to $t0
+# These next lines are for the bitwise multiplication by 10
+sll $t1, $t0, 4 #Multiply by 16 (16x)
+sll $t2, $t0, 2 #Multiply by 4 (4x)
+sll $t3, $t0, 1 #Multiply by 2 (2x)
+sub $t0, $t1, $t2 #$t0=$t1(16x)-$t2(4x)
+sub $t0, $t0, $t3 #$t0=$t0(12x)-$t3(2x)
 
-# ----------------------------------------
-# This method generates one vowel letter
-# Returns vowel letter in $s1
-# ----------------------------------------
-genVowel:
-li $a1, 4 # Sets upper bound of random number generation as 4
-li $v0, 42 # Sets syscall to generate sudo-random number
-syscall # Result stored in $a0
-beq $a0, 0, vowela #Checks if $a0 == 0
-beq $a0, 1, vowele #Checks if $a0 == 1
-beq $a0, 2, voweli #Checks if $a0 == 2
-beq $a0, 3, vowelo #Checks if $a0 == 3
-beq $a0, 4, vowelu #Checks if $a0 == 4
-vowela: #Sets $s1 to 'a' and returns
-li $s1, 65
-jr $ra
-vowele:#Sets $s1 to 'e' and returns
-li $s1, 69
-jr $ra
-voweli:#Sets $s1 to 'i' and returns
-li $s1, 73
-jr $ra
-vowelo:#Sets $s1 to 'o' and returns
-li $s1, 79
-jr $ra
-vowelu:#Sets $s1 to 'u' and returns
-li $s1, 85
-jr $ra
+add $s1, $s1, $t0 # $s1 + random offset by 10 bytes
 
-genEnd:
-# Restore from stack to $s0 and $s1
-lw $s1, 0($sp)
-lw $s0, 4($sp)
+#read the word
+lb $t0, 0($s1)
+sb $t0, 0($s0)
+lb $t0, 1($s1)
+sb $t0, 1($s0)
+lb $t0, 2($s1)
+sb $t0, 2($s0)
+lb $t0, 3($s1)
+sb $t0, 3($s0)
+lb $t0, 4($s1)
+sb $t0, 4($s0)
+lb $t0, 5($s1)
+sb $t0, 5($s0)
+lb $t0, 6($s1)
+sb $t0, 6($s0)
+lb $t0, 7($s1)
+sb $t0, 7($s0)
+lb $t0, 8($s1)
+sb $t0, 8($s0)
+lb $t0, 9($s1)
+sb $t0, 9($s0)
+
 lw $ra , 8($sp)
-addi $sp, $sp, 12
+lw $s0, 4($sp)
+lw $s1, 0($sp)
+addi $sp, $sp 12
 jr $ra

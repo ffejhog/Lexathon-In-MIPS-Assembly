@@ -18,7 +18,8 @@ main:
 	jal loadFile
 	move $a0, $v1
 	jal genMain
-	
+	li $v0, 10
+	syscall
 # --------------------------------------------------------------------------------------------------------
 # Prameters: a0: Address where letters will be saved
 #
@@ -70,8 +71,12 @@ sb $t0, 8($s0)
 lb $t0, 9($s1)
 sb $t0, 9($s0)
 
-li $v0, 10
-syscall
+lw $ra , 8($sp)
+lw $s0, 4($sp)
+lw $s1, 0($sp)
+addi $sp, $sp 12
+jr $ra
+
 
 
 

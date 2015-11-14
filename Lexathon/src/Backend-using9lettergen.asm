@@ -58,6 +58,13 @@ backendSearch:
 	jal search
 	blt $v0, 15, backendSearch # used to make sure more than 15 words are found
 	
+	
+	move $a0, $v0
+	jal add_Letters #Used to add nine letter word to wordlist
+	addi $v0, $v0, 1 #Incrument number of words by one
+	
+	#AT THIS POINT $v0 CONTAINS THE NUMBER OF WORDS
+	
 	move $a0, $v0
 	li $v0, 1
 	syscall
@@ -73,9 +80,30 @@ backendSearch:
 	li $v0, 1
 	syscall
 	
+
+#----THE STUFF IN HERE IS USED TO PRINT OUT THE WORD LIST FOR TESTING, IT SHOULD BE REMOVED IN THE FINAL BUILD----
+	li $v0, 11
+	li $a0, 10
+	syscall
+	la $t0, words+-1
+	print:
+	addi $t0, $t0, 1
+	lb $a0, ($t0)
+	beq $a0, 0, remove_null
+	syscall
+	bne $a0, 10, print
+#----THE STUFF IN HERE IS USED TO PRINT OUT THE WORD LIST FOR TESTING, IT SHOULD BE REMOVED IN THE FINAL BUILD----
+	
+	
 	#Exit
 	li $v0, 10
 	syscall
+	
+remove_null:
+	li $a0, 45
+	syscall
+	j print
+	
 
 # "loadFile" subroutine
 # PARAMETERS:		$a0 = address of the name of the ".txt" file to open.
@@ -294,7 +322,7 @@ search:
 		addi $s0, $s0, 2
 		#We have reached end of dictiionary if $t8 = 1
 		bne $t8, 1, searchLoop0
-	
+
 	#Reload registers and return
 	lw $ra, ($sp)
 	lw $s7, 4($sp)
@@ -497,6 +525,70 @@ sb $t0, 8($s0)
 lb $t0, 9($s1)
 sb $t0, 9($s0)
 
+lw $ra , 8($sp)
+lw $s0, 4($sp)
+lw $s1, 0($sp)
+addi $sp, $sp 12
+jr $ra
+
+
+
+#-------------------------------------------------------
+#NAME: add_letters
+#Used to add letters to the end of the wordlist
+#ARGUMENTS: $a0, number of words
+#Returns: None, directly operates on words
+#-------------------------------------------------------
+# Save $s0, and #s1 by convention
+add_Letters:
+addi $sp, $sp -12
+sw $ra , 8($sp)
+sw $s0, 4($sp)
+sw $s1, 0($sp)
+
+la $t0, words
+li $t3, 0
+add_letters_Loop:
+addi $t0, $t0, 1
+lb $t1, ($t0)
+beq $t1, 0, check_null
+j add_letters_Loop
+
+check_null:
+addi $t3, $t3, 1
+beq $t3, $a0, load_Letters
+j add_letters_Loop
+
+load_Letters:
+addi $t0, $t0, 1
+#Load addresses
+move $s0, $t0
+la $s1, Letters
+
+#LOad letters and add(Not using loop to save instructions
+lb $t0, 0($s1)
+sb $t0, 0($s0)
+lb $t0, 1($s1)
+sb $t0, 1($s0)
+lb $t0, 2($s1)
+sb $t0, 2($s0)
+lb $t0, 3($s1)
+sb $t0, 3($s0)
+lb $t0, 4($s1)
+sb $t0, 4($s0)
+lb $t0, 5($s1)
+sb $t0, 5($s0)
+lb $t0, 6($s1)
+sb $t0, 6($s0)
+lb $t0, 7($s1)
+sb $t0, 7($s0)
+lb $t0, 8($s1)
+sb $t0, 8($s0)
+lb $t0, 9($s1)
+sb $t0, 9($s0)
+
+
+# Exit subroutine
 lw $ra , 8($sp)
 lw $s0, 4($sp)
 lw $s1, 0($sp)

@@ -15,49 +15,48 @@
 
 StringCheck:
 
-li $t2, 0	# zeros out $t2 and $t4 to be prepared for their uses in the primary loop (StrChLoop0)
-li $t4, 0
+li $t2, 0	# zeros out $t2 to be prepared for their uses in the primary loop (StrChLoop0)
 
 StrChLoop0:	# the primary loop; compares each individual letter of every word
 
 lb $t0, 0($a1)	# loads the current letters of the strings to $t0 and $t1
 lb $t1, 0($a0)	
 
-seq $t3, $t0, $t1	# compares the current letters 
+bne $t0, $t1, StrChReset # compares the current letters, and branches if the letters are different 
 
-beqz $t0, StrChLoop1	# exits the loop if the null terminator is reached in either string
-beqz $t1, StrChLoop1
+beqz $t0, StrChLoop1	# exits the loop if the null terminator is reached in the current correct string
 
-add $t4, $t4, $t3	# $t4 keeps track of number of matches
-
-addi $t0, $t0, 1	# increments the current letter of each string, and the size of the string as well stored in $t2
-addi $t1, $t1, 1	
+addi $a0, $a0, 1	# increments the current letter of each string, and the size of the string as well stored in $t2
+addi $a1, $a1, 1	
 addi $t2, $t2, 1
 
 j StrChLoop0
 
 StrChLoop1:
 
-seq $t3, $t3, 1		# uses $t3's value to determine if the strings are the same length (by null termination) 
-seq $t4, $t4, $t2	# compares $t2 and $t4 to check if the length of the strings is equal to the number of char matches
+beqz $t1, StrMatch	# concludes the words are a match if $t1 is also null terminated
 
-add $t3, $t3, $t4	# adds the bools from the above checks and if they are both true (the value 2) then the strings are a match
-beq $t3, 2, StrMatch	
+addi $a1, $a1, 1	# increments the current letter of the list of correct strings
+lb $t0, 0($a1)		# loads the letter to $t0
 
-li $t2, 0		# zeros out temporaries for reuse
-li $t4, 0
+beqz $t0, StrNoMatch	# ends search when double null terminator is reached, and concludes there is no match
 
-addi $t0, $t0, 1	# increments the current letter of each string, and the size of the string as well stored in $t2
-addi $t1, $t1, 1	
-addi $t2, $t2, 1
-
-beqz $t0, StrNoMatch	# ends search when double null terminator is reached
-
-j StrChLoop0		# returns to primary loop
-
-StrMatch:	# NEEDS TO BE COMPLETED BY MOVING CORRECT ANSWER FROM $a1 TO $a2
+subi $a0, $a0, $t2	# resets the user input
+li $t2, 0		# zeroes out the letter counter
+j StrChLoop0		# returns to the primary loop
 
 
+StrChReset:
+
+addi $a0, $a0, 1	# increments the letter in the list of correct strings
+lb $t0, 0($a0)		# loads the letter to $t0
+bnez $t0, StrChReset	# runs the loop until the null terminator is reached
+subi $a0, $a0, $t2	# restes the user input
+li $t2, 0		# zeroes out the counter
+j StrChLoop0		# returns to the primary loop
+
+
+StrMatch:
 
 li $v0, 1	# returns 1 to be interpreted as a boolean true
 jr $ra

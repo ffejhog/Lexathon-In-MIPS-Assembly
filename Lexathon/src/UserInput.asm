@@ -28,21 +28,32 @@ NewLine:		.asciiz		"\n"
 
 Input:			.byte		0:10
 
-Letters:		.byte		'A','B','C','D','E','F','G','H','I'				
+Letters:		.byte		'A','B','C','D','E','F','G','H','I'
+Words:			.space		1000		#100 10-Word Slots
+				
 
 #REGISTER USE:
 # $s0 - Timer (in seconds)
-# $s1 - Logic Bits (0-8: Input Bits, 9-31 UNUSED)
+# $s1 - Logic Bits (0-8: Input Bits, 9: Timer On, 10: Waiting For Reset, 11-31 UNUSED)
 # $s2 - Start Frame (when timer was last checked)
 
 .text
-	li $s0,60			#Default Timer Setup
+	li $s0,5			#Default Timer Setup
 
 
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
 	lw $t1,0($t0)
 	ori $t1,$t1,0x00000002		#Check Bit Position 1 (Interrupt-Enable Bit) true
 	sw $t1,0($t0)
+	
+	ori $s1,$s1,0x00000200		#Checks true that the timer is active
+	
+	#-------------------------------------------------------------------------------------------------------#
+	#					Main Program Execution						#				
+	#	Setup should be completed before this point. Once the interruptable bit is saved, the		#
+	#	program will start executing interrupts.							#				
+	#-------------------------------------------------------------------------------------------------------#
+	
 	
 	li $v0, 30			#Fetches system time, miliseconds since Jan 1 1970
 	syscall
@@ -54,6 +65,13 @@ Letters:		.byte		'A','B','C','D','E','F','G','H','I'
 	jal DrawScreen
 
 	MainLoop:			#Standard waiting and time checking while player isn't providing input
+	
+	
+	andi $t0,$s1,0x00000200		#Transfers the timer active bit
+	beq $t0,$zero,TimerOff		#Leave the timer alone if the timer is off, do not process time
+	jal CheckTime
+	
+	TimerOff:
 	
 	#-------------------------------------------------------------------------------------------------------#
 	#					Time Wasting Loop						#				#
@@ -67,13 +85,6 @@ Letters:		.byte		'A','B','C','D','E','F','G','H','I'
 	WasteTime:
 	addi $t5,$t5,-1
 	bne $t5,$zero,WasteTime
-
-	
-	jal CheckTime
-
-	
-	
-	
 	
 	j MainLoop
 
@@ -113,7 +124,15 @@ CheckTime:
 	
 	jr $ra
 	
-	
+#---------------------------------------------------------------------------------------------------------------#
+#	Subroutine: DrawTimer											#
+#		Use: 		Draws the appropriate timer in five digits.					#
+#														#
+#		Inputs:		NONE										#
+#		Ouptuts: 	NONE										#
+#														#
+#---------------------------------------------------------------------------------------------------------------#
+		
 DrawTimer:
 	li $a0,48
 	li $v0,11
@@ -295,6 +314,7 @@ Exit:
 	andi $k0,$k0,0x0000017C		#Transfer 1s on bits 2-6 and 8
 	li $k1,0x00000100		#Check for 1 at bit 8 and zeroes in bits 2-6
 	bne $k0,$k1,NotKeyboard
+	
 	li $k1,0xffff0004		#Address of Receiver Data
 	lb $a0,0($k1)
 	
@@ -367,18 +387,45 @@ UnusedKey:
 
 NotKeyboard:	#Continue To Other Handlers
 
-
 	#-------------------------------#
 	#	Timer End Detected	#
 	#-------------------------------#
-li $v0,4
-la $a0,Output1
-syscall
+	li $k1,0x00000034		#This is the bit pattern for the timer trap
+	bne $k0,$k1,NotTimer
+	
+	li $v0,4
+	la $a0,Output1
+	syscall
+	
+	la $a0,NewLine
+	syscall
+	
+	la $a0,Words
+	syscall
+	
+	la $a0,NewLine
+	syscall
+	
+	andi $s1,$s1,0xFFFFFDFF		#Switch timer bit off, stopping the timer
+	
+	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
+	lw $t1,0($t0)
+	ori $t1,$t1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
+	sw $t1,0($t0)
+	
+	la $k0,MainLoop			#Program will not process time or update screen till a new game is started
+	mtc0 $k0,$14
+	
+	eret
 
-la $k0,Exit
-mtc0 $k0,$14
+		
+	
+NotTimer:
 
-eret
+	la $k0,Exit
+	mtc0 $k0,$14
+
+	eret
 
 
 

@@ -12,7 +12,9 @@
 # 		 merged with files containing other dictionary operations.					  
 #  --------------------------------------------------------------------------------
 .data
-Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
+#Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
+#Note: Letters stored in UserInput
+
 histogram_list: .word 0, 0, 0 #Three words used for each character list's histogram
 				#IMPORTANT: Each word in "histogram_list" will only
 				#contain AT MOST 30 bits of information. At least
@@ -21,14 +23,26 @@ histogram_list: .word 0, 0, 0 #Three words used for each character list's histog
 				#character count.
 file_name_dictionary: .asciiz "wordlist.txt" #Name of the dictionary text file
 file_name_9_letter: .asciiz "dictionary_9_letter_words.txt" #Name of the 9 letter word text file
-temp_chars:	.asciiz "BETHAILRS" #test string, delete in final version plz
-words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
+
+#words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
+#Note: words stored in UserInput
+
 dictionary: .space 450000 #~450 KB
 nine_letter_words: .space 150000 #~150 KB
 
+	#-------------------------------------------------------------------------------------------------------#
+	#					Global Labels							#				
+	#			Allows use of the following labels for use outside this file.			#				
+	#-------------------------------------------------------------------------------------------------------#
+.globl 	backendMain,genMain
+
 .text
 #Main
-main:
+backendMain:
+
+	addi $sp,$sp,-4
+	sw $ra,0($sp)
+
 	#Load 9 Letters to use for search
 	la $a0, file_name_9_letter
 	la $a1, nine_letter_words
@@ -47,6 +61,12 @@ main:
 	li $v0, 30
 	syscall
 	move $s7, $a0
+	
+	lw $ra,0($sp)
+	addi $sp,$sp,4
+	jr $ra
+	
+	
 	
 	#Gen randoms and search
 backendSearch:
@@ -80,29 +100,14 @@ backendSearch:
 	li $v0, 1
 	syscall
 	
-
-#----THE STUFF IN HERE IS USED TO PRINT OUT THE WORD LIST FOR TESTING, IT SHOULD BE REMOVED IN THE FINAL BUILD----
-	li $v0, 11
-	li $a0, 10
-	syscall
-	la $t0, words+-1
-	print:
-	addi $t0, $t0, 1
-	lb $a0, ($t0)
-	beq $a0, 0, remove_null
-	syscall
-	bne $a0, 10, print
-#----THE STUFF IN HERE IS USED TO PRINT OUT THE WORD LIST FOR TESTING, IT SHOULD BE REMOVED IN THE FINAL BUILD----
-	
-	
 	#Exit
 	li $v0, 10
 	syscall
 	
-remove_null:
-	li $a0, 45
-	syscall
-	j print
+#remove_null:
+#	li $a0, 45
+#	syscall
+#	j print
 	
 
 # "loadFile" subroutine

@@ -1,3 +1,5 @@
+.globl Scoring
+
 ## Scoring Subroutine
 
 ## Creator: Daniel Lecheler
@@ -10,6 +12,8 @@
 #			
 # SAVED REGISTERS:	$s0 = the current total score
 # RETURNS:		$v0 = the total score with the correct input accounted for
+
+
 
 Scoring:
 

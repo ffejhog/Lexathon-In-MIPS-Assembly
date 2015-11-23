@@ -1,3 +1,5 @@
+.globl StringCheck
+
 ## String Check Subroutine
 
 ## Creator: Daniel Lecheler
@@ -12,6 +14,8 @@
 #			$a2 = the memory address of a list of correct answers already entered by the user
 # SAVED REGISTERS:	
 # RETURNS:		$v0 = the length of the input if the input is correct, or -1 if the input is incorrect
+
+
 
 StringCheck:
 
@@ -44,7 +48,7 @@ lb $t0, 0($a1)		# loads the letter to $t0
 
 beqz $t0, StrNoMatch	# ends search when double null terminator is reached, and concludes there is no match
 
-subi $a0, $a0, $t2	# resets the user input
+sub $a0, $a0, $t2	# resets the user input
 li $t2, 0		# zeroes out the letter counter
 j StrChLoop0		# returns to the primary loop
 
@@ -54,7 +58,7 @@ StrChReset:
 addi $a0, $a0, 1	# increments the letter in the list of correct strings
 lb $t0, 0($a0)		# loads the letter to $t0
 bnez $t0, StrChReset	# runs the loop until the null terminator is reached
-subi $a0, $a0, $t2	# restes the user input
+sub $a0, $a0, $t2	# restes the user input
 li $t2, 0		# zeroes out the counter
 j StrChLoop0		# returns to the primary loop
 

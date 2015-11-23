@@ -13,6 +13,22 @@
 # |				Non-number inputs ignored			  |
 #  --------------------------------------------------------------------------------
 
+
+# MULTI FILE TUTORIAL:
+#	1) Go to Settings > Assemble All Files In Directory > TRUE
+#	2) Make sure that dictionary files are in your MARS folder!
+#	3) Go to Tools > Keyboard and Display MMIO Simulator
+#	3) In MMIO simulator, click button on bottom left "Connect to MIPS"
+#	4) You may run the program normally
+#
+#	NOTE: TIMER IS CURRENTLY SET AT 10 SECONDS FOR SWIFT DEBUGGING
+
+#	BELOW YOU WILL FIND SECTIONS WHERE I'VE MARKED WHERE EXTERNAL SUBROUTINES SHOULD BE RUN FEEL FREE TO INSERT THEM
+#	JUST REMEMBER THAT YOU NEED TO ADD ANY EXTERNAL LABELS YOU USE TO THE .globl FOUND AT THE TOP OF THE FILE WHERE
+#	IT EXISTS
+
+#	ALL BLOCKS WHERE CODE NEEDS INSERTING WILL BE MARKED "#INSERT BLOCK" SO YOU CAN USE CTRL+F TO FIND THEM
+
 .data
 
 Hud1:		.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
@@ -28,7 +44,7 @@ NewLine:		.asciiz		"\n"
 
 Input:			.byte		0:10
 
-Letters:		.space		10
+Letters:		.byte		0:10
 words:			.space		1000		#100 10-Word Slots
 WordsUsed:		.byte		0:100		
 				
@@ -49,10 +65,18 @@ main:
 	#	Calls the letter generation and dictionary generation from the Backend.				#				
 	#-------------------------------------------------------------------------------------------------------#
 	
+	#INSERT BLOCK
+	#############################################
+	#	DO LETTERS AND WORDLIST SETUP HERE
 	jal backendMain
+	#
+	#############################################
 	
-
-	li $s0,60			#Default Timer Setup
+	
+	li $s0,10			#Default Timer Setup
+	li $s1,0
+	li $s2,0
+	li $s3,0
 
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
 	lw $t1,0($t0)
@@ -317,6 +341,13 @@ DrawScreen:
 Exit:
 
 
+	#-------------------------------------------------------------------------------------------------------#
+	#					Exception Section						#				
+	#													#
+	#		Program jumps to these instructions upon interruption or trap				#
+	#													#				
+	#-------------------------------------------------------------------------------------------------------#
+
 .ktext 0x80000180
 
 	#---------------------------------------#
@@ -385,7 +416,8 @@ EnterEvent:
 	andi $k0,$s1,0x00000010		#Transfer 5th (the required input) use bit
 	beq $k0,$zero,NotUseCenter
 	
-	######## CHECK INPUT #######
+	#INSERT BLOCK
+	######## CHECK INPUT AND SCORE APPROPRIATELY #######
 	
 	
 	#jal StringCheck 		#Jumps to String Check subroutine by Daniel inf "stringCheck.asm"
@@ -394,6 +426,8 @@ EnterEvent:
 	
 	NotUseCenter:
 	######### NEED SOME KIND OF FAILURE FEEDBACK ############
+	
+	
 	andi $s1,$s1,0xFFFFFE00		#Turns off first 9 bits (ie the input bits)
 	
 	la $k0,Input
@@ -424,8 +458,22 @@ NotKeyboard:	#Continue To Other Handlers
 	la $a0,NewLine
 	syscall
 	
-	la $a0,words
+	#############################################
+	#	PRINT WORDLIST HERE
+	la $k0,words
+	addi $k1,$k0,999
+	li $v0,11
+	WordLoop:
+	lb $a0,0($k0)
 	syscall
+	addi $k0,$k0,1
+	beq $k0,$k1,WordsPrinted
+	j WordLoop
+	
+	WordsPrinted:
+	
+	
+	#############################################
 	
 	la $a0,NewLine
 	syscall

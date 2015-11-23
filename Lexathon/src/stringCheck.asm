@@ -1,5 +1,3 @@
-.globl StringCheck
-
 ## String Check Subroutine
 
 ## Creator: Daniel Lecheler
@@ -15,8 +13,6 @@
 # SAVED REGISTERS:	
 # RETURNS:		$v0 = the length of the input if the input is correct, or -1 if the input is incorrect
 
-
-
 StringCheck:
 
 addi $sp, $sp, -4
@@ -26,12 +22,12 @@ li $t2, 0	# zeros out $t2 to be prepared for their uses in the primary loop (Str
 
 StrChLoop0:	# the primary loop; compares each individual letter of every word
 
-lb $t0, 0($a1)	# loads the current letters of the strings to $t0 and $t1
-lb $t1, 0($a0)	
+lb $t0, 0($a0)	# loads the current letters of the strings to $t0 and $t1
+lb $t1, 0($a1)	
 
 bne $t0, $t1, StrChReset # compares the current letters, and branches if the letters are different 
 
-beqz $t0, StrChLoop1	# exits the loop if the null terminator is reached in the current correct string
+beqz $t1, StrChLoop1	# exits the loop if the null terminator is reached in the current correct string
 
 addi $a0, $a0, 1	# increments the current letter of each string, and the size of the string as well stored in $t2
 addi $a1, $a1, 1	
@@ -41,12 +37,12 @@ j StrChLoop0
 
 StrChLoop1:
 
-beqz $t1, StrMatch	# concludes the words are a match if $t1 is also null terminated
+beqz $t0, StrMatch	# concludes the words are a match if $t0 is also null terminated
 
 addi $a1, $a1, 1	# increments the current letter of the list of correct strings
-lb $t0, 0($a1)		# loads the letter to $t0
+lb $t1, 0($a1)		# loads the letter to $t0
 
-beqz $t0, StrNoMatch	# ends search when double null terminator is reached, and concludes there is no match
+beqz $t1, StrNoMatch	# ends search when double null terminator is reached, and concludes there is no match
 
 sub $a0, $a0, $t2	# resets the user input
 li $t2, 0		# zeroes out the letter counter
@@ -55,9 +51,9 @@ j StrChLoop0		# returns to the primary loop
 
 StrChReset:
 
-addi $a0, $a0, 1	# increments the letter in the list of correct strings
-lb $t0, 0($a0)		# loads the letter to $t0
-bnez $t0, StrChReset	# runs the loop until the null terminator is reached
+addi $a1, $a1, 1	# increments the letter in the list of correct strings
+lb $t1, 0($a1)		# loads the letter to $t0
+bnez $t1, StrChReset	# runs the loop until the null terminator is reached
 sub $a0, $a0, $t2	# restes the user input
 li $t2, 0		# zeroes out the counter
 j StrChLoop0		# returns to the primary loop

@@ -9,7 +9,6 @@
 # PARAMETERS: 		$a0 = addres of the input made by the user.
 #			$a1 = the memory address of the list of correct words generated from
 #				the letters provided.
-#			$a2 = the memory address of a list of correct answers already entered by the user
 # SAVED REGISTERS:	
 # RETURNS:		$v0 = the length of the input if the input is correct, or -1 if the input is incorrect
 
@@ -19,6 +18,8 @@ addi $sp, $sp, -4
 sw $ra, 0($sp)
 
 li $t2, 0	# zeros out $t2 to be prepared for their uses in the primary loop (StrChLoop0)
+
+move $t3, $a0	# copies the address of the input to $t3
 
 StrChLoop0:	# the primary loop; compares each individual letter of every word
 
@@ -54,7 +55,7 @@ StrChReset:
 addi $a1, $a1, 1	# increments the letter in the list of correct strings
 lb $t1, 0($a1)		# loads the letter to $t0
 bnez $t1, StrChReset	# runs the loop until the null terminator is reached
-sub $a0, $a0, $t2	# restes the user input
+move $a0, $t3		# restes the user input
 li $t2, 0		# zeroes out the counter
 j StrChLoop0		# returns to the primary loop
 

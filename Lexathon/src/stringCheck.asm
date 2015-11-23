@@ -11,9 +11,12 @@
 #				the letters provided.
 #			$a2 = the memory address of a list of correct answers already entered by the user
 # SAVED REGISTERS:	
-# RETURNS:		$v0 = boolean representing if the input is in the list or not
+# RETURNS:		$v0 = the length of the input if the input is correct, or -1 if the input is incorrect
 
 StringCheck:
+
+addi $sp, $sp, -4
+sw $ra, 0($sp)
 
 li $t2, 0	# zeros out $t2 to be prepared for their uses in the primary loop (StrChLoop0)
 
@@ -58,11 +61,22 @@ j StrChLoop0		# returns to the primary loop
 
 StrMatch:
 
-li $v0, 1	# returns 1 to be interpreted as a boolean true
+move $v0, $t2	# returns the length of the input
+
+move $a0, $t2	# prepares $a0 to be passed to Scoring subroutine
+jal Scoring	
+
+lw $ra, 0($sp)
+addi $s0, $s0, 4
+
 jr $ra
 
 StrNoMatch:
-li $v0, 0	# returns 0 to be interpreted as a boolean false
+li $v0, -1	# returns -1 if there is no match
+
+lw $ra, 0($sp)
+addi $s0, $s0, 4
+
 jr $ra
 
 

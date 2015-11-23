@@ -12,7 +12,7 @@
 # 		 merged with files containing other dictionary operations.					  
 #  --------------------------------------------------------------------------------
 .data
-Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
+#Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
 #Note: Letters stored in UserInput
 
 histogram_list: .word 0, 0, 0 #Three words used for each character list's histogram
@@ -24,7 +24,7 @@ histogram_list: .word 0, 0, 0 #Three words used for each character list's histog
 file_name_dictionary: .asciiz "wordlist.txt" #Name of the dictionary text file
 file_name_9_letter: .asciiz "dictionary_9_letter_words.txt" #Name of the 9 letter word text file
 
-words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
+#words: .space 1000 #max of 10 chars per word (9+null term), 100 words max
 #Note: words stored in UserInput
 
 dictionary: .space 450000 #~450 KB
@@ -500,12 +500,12 @@ li $v0, 42 # Sets syscall to generate sudo-random number
 syscall # Result stored in $a0
 move $t0, $a0 #move random number to $t0
 # These next lines are for the bitwise multiplication by 10
-sll $t1, $t0, 4 #Multiply by 16 (16x)
-sll $t2, $t0, 2 #Multiply by 4 (4x)
-sll $t3, $t0, 1 #Multiply by 2 (2x)
-sub $t0, $t1, $t2 #$t0=$t1(16x)-$t2(4x)
-sub $t0, $t0, $t3 #$t0=$t0(12x)-$t3(2x)
-
+#sll $t1, $t0, 4 #Multiply by 16 (16x)
+#sll $t2, $t0, 2 #Multiply by 4 (4x)
+#sll $t3, $t0, 1 #Multiply by 2 (2x)
+#sub $t0, $t1, $t2 #$t0=$t1(16x)-$t2(4x)
+#sub $t0, $t0, $t3 #$t0=$t0(12x)-$t3(2x)
+mul $t0, $t0, 11
 add $s1, $s1, $t0 # $s1 + random offset by 10 bytes
 
 #read the word

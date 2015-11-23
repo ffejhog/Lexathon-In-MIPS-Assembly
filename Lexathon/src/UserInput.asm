@@ -28,18 +28,31 @@ NewLine:		.asciiz		"\n"
 
 Input:			.byte		0:10
 
-Letters:		.byte		'A','B','C','D','E','F','G','H','I'
-Words:			.space		1000		#100 10-Word Slots
+Letters:		.space		10
+words:			.space		1000		#100 10-Word Slots
+WordsUsed:		.byte		0:100		
 				
+.globl		Letters,words			
 
 #REGISTER USE:
 # $s0 - Timer (in seconds)
 # $s1 - Logic Bits (0-8: Input Bits, 9: Timer On, 10: Waiting For Reset, 11-31 UNUSED)
 # $s2 - Start Frame (when timer was last checked)
+# $s3 - User Score
 
 .text
-	li $s0,5			#Default Timer Setup
 
+main:
+	
+	#-------------------------------------------------------------------------------------------------------#
+	#					Word and Letter Setup						#				
+	#	Calls the letter generation and dictionary generation from the Backend.				#				
+	#-------------------------------------------------------------------------------------------------------#
+	
+	jal backendMain
+	
+
+	li $s0,60			#Default Timer Setup
 
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
 	lw $t1,0($t0)
@@ -369,8 +382,19 @@ LetterInUse:
 	#	User Hit Enter Key	#
 	#-------------------------------#
 EnterEvent:
+	andi $k0,$s1,0x00000010		#Transfer 5th (the required input) use bit
+	beq $k0,$zero,NotUseCenter
 	
-	li $s1,0
+	######## CHECK INPUT #######
+	
+	
+	#jal StringCheck 		#Jumps to String Check subroutine by Daniel inf "stringCheck.asm"
+	
+	
+	
+	NotUseCenter:
+	######### NEED SOME KIND OF FAILURE FEEDBACK ############
+	andi $s1,$s1,0xFFFFFE00		#Turns off first 9 bits (ie the input bits)
 	
 	la $k0,Input
 	sb $zero,0($k0)
@@ -400,7 +424,7 @@ NotKeyboard:	#Continue To Other Handlers
 	la $a0,NewLine
 	syscall
 	
-	la $a0,Words
+	la $a0,words
 	syscall
 	
 	la $a0,NewLine

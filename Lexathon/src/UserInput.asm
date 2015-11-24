@@ -38,7 +38,7 @@ Hud4:		.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ','
 Hud5:		.byte						 '#','	','	','	','|',' ',' ',' ','D',' ',' ',' ','|',' ',' ',' ','E',' ',' ',' ','|',' ',' ',' ','F',' ',' ',' ','|','	','	','	','#',0
 Hud6:		.byte						 '#','	','	','	','|',' ',' ',' ','A',' ',' ',' ','|',' ',' ',' ','B',' ',' ',' ','|',' ',' ',' ','C',' ',' ',' ','|','	','	','	','#',0
 Hud7:		.asciiz						 "#			|_______|_______|_______|			#"
-Hud8: 		.asciiz						 "-------------------------------------------------------------------------"
+Hud8: 		.asciiz						 "--------------------------------------------------------------Score:"
 
 NewLine:		.asciiz		"\n"
 
@@ -69,6 +69,7 @@ main:
 	#############################################
 	#	DO LETTERS AND WORDLIST SETUP HERE
 	jal backendMain
+	jal backendSearch
 	#
 	#############################################
 	
@@ -124,6 +125,60 @@ main:
 	bne $t5,$zero,WasteTime
 	
 	j MainLoop
+	
+	#-------------------------------------------------------------------------------------------------------#
+	#					Scoring Logic							#			
+	#	The program jumps to this portion of the code in order to properly score input when entered.	#
+	#													#
+	#	NOTE: Time MUST be stopped to avoid interruption!						#	
+	#-------------------------------------------------------------------------------------------------------#
+	
+	ScoreEntry:
+	
+	andi $s1,$s1,0xFFFFFDFF		#Switch timer bit off, stopping the timer
+	
+	li $t0,0xFFFF0000		#Keyboard and Display MMIO Receiver RControl Register
+	lw $t1,0($t0)
+	ori $t1,$t1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
+	sw $t1,0($t0)
+	
+	la $a0,Input
+	la $a1,words
+	jal StringCheck 		#Jumps to String Check subroutine by Daniel inf "stringCheck.asm"
+					# v0 is now EITHER -1 if there was no match OR equal to the 
+	
+	slt $t0,$v0,$zero
+	bne $t0,$zero,NoMatch
+	
+	add $s3,$s3,$v0
+	
+	li $v0,4
+	la $a0,Output1
+	syscall
+	
+	
+	
+	NoMatch:
+	
+	
+	
+	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
+	lw $t1,0($t0)
+	ori $t1,$t1,0x00000002		#Check Bit Position 1 (Interrupt-Enable Bit) true
+	sw $t1,0($t0)
+	
+	ori $s1,$s1,0x00000200		#Checks true that the timer is active
+	
+	j Redraw
+	
+	# Check String
+	#Score Add
+	#Mark Use
+	#Add Time
+	#Clear Data
+	#Start Clock
+	#Redraw Screen
+	
 
 #---------------------------------------------------------------------------------------------------------------#
 #	Subroutine: CheckTime											#
@@ -171,8 +226,8 @@ CheckTime:
 #---------------------------------------------------------------------------------------------------------------#
 		
 DrawTimer:
-	li $a0,48
 	li $v0,11
+	li $a0,48
 
 	slti $t1,$s0,10000
 	bne $t1,$zero,NotFiveDigit
@@ -216,12 +271,72 @@ DrawTimer:
 	li $v0,1
 	move $a0,$s0
 	syscall
-	j TimerPrintDone
 	
 	TimerPrintDone:
 	
 	jr $ra
 	
+#---------------------------------------------------------------------------------------------------------------#
+#	Subroutine: DrawScore											#
+#		Use: 		Draws the score with leading zeroes.						#
+#														#
+#		Inputs:		NONE										#
+#		Ouptuts: 	NONE										#
+#														#
+#		NOTE: This could be fused with DrawTimer to make a more generic subroutine.			#
+#---------------------------------------------------------------------------------------------------------------#
+
+DrawScore:
+
+	li $v0,11
+	li $a0,48
+
+	slti $t1,$s3,10000
+	bne $t1,$zero,ScoreNotFiveDigit
+	li $v0,1
+	move $a0,$s3
+	syscall
+	j ScorePrintDone
+	
+	ScoreNotFiveDigit:
+	syscall
+	
+	slti $t1,$s3,1000
+	bne $t1,$zero,ScoreNotFourDigit
+	li $v0,1
+	move $a0,$s3
+	syscall
+	j ScorePrintDone
+	
+	ScoreNotFourDigit:
+	syscall
+	
+	slti $t1,$s3,100
+	bne $t1,$zero,ScoreNotThreeDigit
+	li $v0,1
+	move $a0,$s3
+	syscall
+	j ScorePrintDone
+	
+	ScoreNotThreeDigit:
+	syscall
+	
+	slti $t1,$s3,10
+	bne $t1,$zero,ScoreNotTwoDigit
+	li $v0,1
+	move $a0,$s3
+	syscall
+	j ScorePrintDone
+	
+	ScoreNotTwoDigit:
+	syscall
+	li $v0,1
+	move $a0,$s3
+	syscall
+	
+	ScorePrintDone:
+	
+	jr $ra
 
 #---------------------------------------------------------------------------------------------------------------#
 #	Subroutine: DrawScreen											#
@@ -328,6 +443,12 @@ DrawScreen:
 	la $a0,Hud8
 	syscall
 	
+	addi $sp,$sp,-4			#Draw the appropriate score
+	sw $ra,0($sp)
+	jal DrawScore
+	lw $ra,0($sp)
+	addi $sp,$sp,4
+	
 	li $v0,4
 	la $a0,NewLine
 	syscall
@@ -420,9 +541,6 @@ EnterEvent:
 	######## CHECK INPUT AND SCORE APPROPRIATELY #######
 	
 	
-	#jal StringCheck 		#Jumps to String Check subroutine by Daniel inf "stringCheck.asm"
-	
-	
 	
 	NotUseCenter:
 	######### NEED SOME KIND OF FAILURE FEEDBACK ############
@@ -433,7 +551,7 @@ EnterEvent:
 	la $k0,Input
 	sb $zero,0($k0)
 	
-	la $k0,Redraw
+	la $k0,ScoreEntry		#Jump to section of the code that handles checking the string and input
 	mtc0 $k0,$14
 
 	#-------------------------------#
@@ -461,7 +579,7 @@ NotKeyboard:	#Continue To Other Handlers
 	#############################################
 	#	PRINT WORDLIST HERE
 	la $k0,words
-	addi $k1,$k0,999
+	addi $k1,$k0,1000
 	li $v0,11
 	WordLoop:
 	lb $a0,0($k0)
@@ -469,6 +587,7 @@ NotKeyboard:	#Continue To Other Handlers
 	addi $k0,$k0,1
 	beq $k0,$k1,WordsPrinted
 	j WordLoop
+	
 	
 	WordsPrinted:
 	

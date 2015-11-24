@@ -34,7 +34,7 @@ nine_letter_words: .space 150000 #~150 KB
 	#					Global Labels							#				
 	#			Allows use of the following labels for use outside this file.			#				
 	#-------------------------------------------------------------------------------------------------------#
-.globl 	backendMain,genMain
+.globl 	backendMain,backendSearch
 
 .text
 #Main
@@ -71,6 +71,9 @@ backendMain:
 	#Gen randoms and search
 backendSearch:
 	
+	addi $sp,$sp,-4
+	sw $ra,0($sp)
+	
 	jal genMain
 	la $s2, Letters
 	move $a0, $s1
@@ -99,6 +102,10 @@ backendSearch:
 	sub $a0, $a0, $s7
 	li $v0, 1
 	syscall
+	
+	lw $ra,0($sp)
+	addi $sp,$sp,4
+	jr $ra
 	
 	#Exit
 	li $v0, 10

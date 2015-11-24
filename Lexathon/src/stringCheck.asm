@@ -1,3 +1,7 @@
+.globl StringCheck
+
+.text
+
 ## String Check Subroutine
 
 ## Creator: Daniel Lecheler

@@ -87,22 +87,22 @@ backendSearch:
 	addi $v0, $v0, 1 #Incrument number of words by one
 	
 	#AT THIS POINT $v0 CONTAINS THE NUMBER OF WORDS
-	
-	move $a0, $v0
-	li $v0, 1
-	syscall
-	
-	li $a0, 10
-	li $v0, 11
-	syscall
-	
-	li $v0, 30
-	syscall
-	
-	sub $a0, $a0, $s7
-	li $v0, 1
-	syscall
-	
+#DEBUGING CODE, ONLY UNCOMMENT FOR DEBUGIGING PURPOSES	
+#	move $a0, $v0
+#	li $v0, 1
+#	syscall
+#	
+#	li $a0, 10
+#	li $v0, 11
+#	syscall
+#	
+#	li $v0, 30
+#	syscall
+#	
+#	sub $a0, $a0, $s7
+#	li $v0, 1
+#	syscall
+	#DEBUGING CODE, ONLY UNCOMMENT FOR DEBUGIGING PURPOSES		
 	lw $ra,0($sp)
 	addi $sp,$sp,4
 	jr $ra

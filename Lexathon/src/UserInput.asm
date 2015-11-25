@@ -44,7 +44,7 @@ NewLine:		.asciiz		"\n"
 
 Input:			.byte		0:10
 
-Letters:		.byte		0:9
+Letters:		.byte		0:10
 words:			.space		1000		#100 10-Word Slots
 WordsUsed:		.byte		0:100		
 DuplicateList:		.byte		0:100		
@@ -65,18 +65,17 @@ main:
 	#	Calls the letter generation and dictionary generation from the Backend.				#				
 	#-------------------------------------------------------------------------------------------------------#
 	
-	#INSERT BLOCK
-	#############################################
-	#	DO LETTERS AND WORDLIST SETUP HERE
+	NewGame:
+	
 	jal backendMain
-	#jal backendSearch
-	#
-	#############################################
 	
 	li $s0,10			#Default Timer Setup
 	li $s1,0
 	li $s2,0
 	li $s3,0
+
+	la $k0,Input
+	sb $zero,0($k0)
 
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
 	lw $t1,0($t0)
@@ -96,13 +95,10 @@ main:
 	syscall
 	add $s2,$zero,$a0		#Move current system time to start time
 	
-	
-	
 	Redraw:				#Return here whenever you need to redraw screen
 	jal DrawScreen
 
 	MainLoop:			#Standard waiting and time checking while player isn't providing input
-	
 	
 	andi $t0,$s1,0x00000200		#Transfers the timer active bit
 	beq $t0,$zero,TimerOff		#Leave the timer alone if the timer is off, do not process time
@@ -134,32 +130,29 @@ main:
 	
 	ScoreEntry:
 	
-	andi $s1,$s1,0xFFFFFDFF		#Switch timer bit off, stopping the timer
-	
-	li $t0,0xFFFF0000		#Keyboard and Display MMIO Receiver RControl Register
-	lw $t1,0($t0)
-	ori $t1,$t1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
-	sw $t1,0($t0)
+	andi $k0,$s1,0x00000010		#Transfer 5th (the required input) use bit
+	beq $k0,$zero,NoMatch
 	
 	la $a0,Input
 	la $a1,words
 	jal StringCheck 		#Jumps to String Check subroutine by Daniel inf "stringCheck.asm"
 					# v0 is now EITHER -1 if there was no match OR equal to the 
+					
+	slt $v0,$v0,$zero
+	bne $v0,$zero,NoMatch
 	
-	slt $t0,$v0,$zero
-	bne $t0,$zero,NoMatch
-	
-	add $s3,$s3,$v0
+	# SUCCESS INDICATOR CODE HERE, PLAY A SOUND?
 	
 	li $v0,4
 	la $a0,Output1
 	syscall
 	
-	
-	
 	NoMatch:
 	
+	andi $s1,$s1,0xFFFFFE00		#Turns off first 9 bits (ie the input bits)
 	
+	la $k0,Input
+	sb $zero,0($k0)
 	
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
 	lw $t1,0($t0)
@@ -169,14 +162,6 @@ main:
 	ori $s1,$s1,0x00000200		#Checks true that the timer is active
 	
 	j Redraw
-	
-	# Check String
-	#Score Add
-	#Mark Use
-	#Add Time
-	#Clear Data
-	#Start Clock
-	#Redraw Screen
 	
 
 #---------------------------------------------------------------------------------------------------------------#
@@ -482,7 +467,6 @@ Exit:
 	li $k1,0xffff0004		#Address of Receiver Data
 	lb $a0,0($k1)
 	
-	
 	slti $k0,$a0,58			# Check that input is in range of numbers 0 to 9
 	beq $k0,$zero,UnusedKey
 	li $k0,47
@@ -492,6 +476,9 @@ Exit:
 	subi $a0,$a0,49			#Now we have reduced it to iterate across the loaded letters, and we have -1 if the entry was 0
 	slt $k1,$a0,$zero
 	bne $k1,$zero,EnterEvent
+	
+	andi $k0,$s1,0x00000200		#Transfers the timer active bit
+	beq $k0,$zero,UnusedKey		#Don't care about non-enter input if timer is off
 	
 	li $k1,1			#Check that the input key is not in use
 	sllv $k1,$k1,$a0
@@ -533,25 +520,22 @@ LetterInUse:
 	#	User Hit Enter Key	#
 	#-------------------------------#
 EnterEvent:
-	andi $k0,$s1,0x00000010		#Transfer 5th (the required input) use bit
-	beq $k0,$zero,NotUseCenter
+	andi $s1,$s1,0xFFFFFDFF		#Switch timer bit off, stopping the timer
 	
-	#INSERT BLOCK
-	######## CHECK INPUT AND SCORE APPROPRIATELY #######
+	li $k0,0xFFFF0000		#Keyboard and Display MMIO Receiver RControl Register
+	lw $k1,0($k0)
+	andi $k1,$k1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
+	sw $k1,0($k0)
 	
-	
-	
-	NotUseCenter:
-	######### NEED SOME KIND OF FAILURE FEEDBACK ############
-	
-	
-	andi $s1,$s1,0xFFFFFE00		#Turns off first 9 bits (ie the input bits)
-	
-	la $k0,Input
-	sb $zero,0($k0)
+	#andi $k0,$s1,0x00000400		#Transfers the waiting for reset bit
+	#bne $k0,$zero,RestartGame	#An enter while waiting for restart starts a new game
 	
 	la $k0,ScoreEntry		#Jump to section of the code that handles checking the string and input
 	mtc0 $k0,$14
+	
+	#RestartGame:
+	#la $k0,NewGame		#Jump to section of the code that handles checking the string and input
+	#mtc0 $k0,$14
 
 	#-------------------------------#
 	#	Non-Implemented Key	#
@@ -577,6 +561,7 @@ NotKeyboard:	#Continue To Other Handlers
 	
 	#############################################
 	#	PRINT WORDLIST HERE
+	#	NOTE: THIS IS NOT FINAL ONLY FOR DEBUG PURPOSES WHILE CONFIGURATION IS FINALIZED
 	la $k0,words
 	addi $k1,$k0,1000
 	li $v0,11
@@ -597,11 +582,7 @@ NotKeyboard:	#Continue To Other Handlers
 	syscall
 	
 	andi $s1,$s1,0xFFFFFDFF		#Switch timer bit off, stopping the timer
-	
-	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
-	lw $t1,0($t0)
-	ori $t1,$t1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
-	sw $t1,0($t0)
+	ori $s1,$s1,0x00000400		#11th bit Indicates that we are waiting for reset
 	
 	la $k0,MainLoop			#Program will not process time or update screen till a new game is started
 	mtc0 $k0,$14

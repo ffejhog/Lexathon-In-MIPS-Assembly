@@ -62,6 +62,8 @@ backendMain:
 	syscall
 	move $s7, $a0
 	
+	jal backendSearch
+	
 	lw $ra,0($sp)
 	addi $sp,$sp,4
 	jr $ra

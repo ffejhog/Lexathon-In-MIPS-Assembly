@@ -71,7 +71,7 @@ move $v0, $t2	# returns the length of the input
 add $s3, $s3, $t2	# adds the length of the correct word to the total score
 
 lw $ra, 0($sp)
-addi $s0, $s0, 4
+addi $sp, $sp, 4
 
 jr $ra
 
@@ -80,7 +80,7 @@ StrNoMatch:
 li $v0, -1	# returns -1 if there is no match
 
 lw $ra, 0($sp)
-addi $s0, $s0, 4
+addi $sp, $sp, 4
 
 jr $ra
 

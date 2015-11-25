@@ -513,7 +513,7 @@ move $t0, $a0 #move random number to $t0
 #sub $t0, $t1, $t2 #$t0=$t1(16x)-$t2(4x)
 #sub $t0, $t0, $t3 #$t0=$t0(12x)-$t3(2x)
 mul $t0, $t0, 11
-add $s1, $s1, $t0 # $s1 + random offset by 10 bytes
+add $s1, $s1, $t0 # $s1 + random offset by 11 bytes
 
 #read the word
 lb $t0, 0($s1)
@@ -596,8 +596,8 @@ lb $t0, 7($s1)
 sb $t0, 7($s0)
 lb $t0, 8($s1)
 sb $t0, 8($s0)
-lb $t0, 9($s1)
-sb $t0, 9($s0)
+#lb $t0, 9($s1)
+#sb $t0, 9($s0)
 
 
 # Exit subroutine

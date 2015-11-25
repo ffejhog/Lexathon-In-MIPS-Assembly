@@ -53,7 +53,7 @@ StrChReset0:		# if StrChLoop1 finds neither a match or a double null terminator,
 beqz $t1, StrChReset1	# checks if $t1 is already the null terminator, and branches if necissary
 addi $a1, $a1, 1	# increments the letter in the list of correct strings
 lb $t1, 0($a1)		# loads the letter to $t0
-bnez $t1, StrChReset	# runs the loop until the null terminator is reached
+bnez $t1, StrChReset1	# runs the loop until the null terminator is reached
 
 StrChReset1:
 

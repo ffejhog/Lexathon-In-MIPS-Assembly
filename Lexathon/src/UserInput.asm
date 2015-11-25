@@ -44,11 +44,11 @@ NewLine:		.asciiz		"\n"
 
 Input:			.byte		0:10
 
-Letters:		.byte		0:10
+Letters:		.byte		0:9
 words:			.space		1000		#100 10-Word Slots
 WordsUsed:		.byte		0:100		
-				
-.globl		Letters,words			
+DuplicateList:		.byte		0:100		
+.globl		Letters,words,DuplicateList		
 
 #REGISTER USE:
 # $s0 - Timer (in seconds)
@@ -69,10 +69,9 @@ main:
 	#############################################
 	#	DO LETTERS AND WORDLIST SETUP HERE
 	jal backendMain
-	jal backendSearch
+	#jal backendSearch
 	#
 	#############################################
-	
 	
 	li $s0,10			#Default Timer Setup
 	li $s1,0

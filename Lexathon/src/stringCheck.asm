@@ -48,6 +48,9 @@ lb $t1, 0($a1)		# loads the letter to $t0
 
 beqz $t1, StrNoMatch	# ends search when double null terminator is reached, and concludes there is no match
 
+addi $a1, $a1, -1	# if the double null terminator hasn't been reached, then the previous letter is restored, and StrChReset0 is called due to the natural flow of the code
+lb $t1, 0($a1)
+
 StrChReset0:		# if StrChLoop1 finds neither a match or a double null terminator, then StrChReset0 is used automatically
 
 beqz $t1, StrChReset1	# checks if $t1 is already the null terminator, and branches if necissary

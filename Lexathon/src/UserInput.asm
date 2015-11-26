@@ -31,14 +31,14 @@
 
 .data
 
-Hud1:		.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
-Hud2:		.asciiz						 "#									#"
-Hud3:		.asciiz						 "#			 _______ _______ _______			#"
-Hud4:		.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ',' ','H',' ',' ',' ','|',' ',' ',' ','I',' ',' ',' ','|','	','	','	','#',0
-Hud5:		.byte						 '#','	','	','	','|',' ',' ',' ','D',' ',' ',' ','|',' ',' ',' ','E',' ',' ',' ','|',' ',' ',' ','F',' ',' ',' ','|','	','	','	','#',0
-Hud6:		.byte						 '#','	','	','	','|',' ',' ',' ','A',' ',' ',' ','|',' ',' ',' ','B',' ',' ',' ','|',' ',' ',' ','C',' ',' ',' ','|','	','	','	','#',0
-Hud7:		.asciiz						 "#			|_______|_______|_______|			#"
-Hud8: 		.asciiz						 "--------------------------------------------------------------Score:"
+Hud1:			.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
+Hud2:			.asciiz						 "#									#"
+Hud3:			.asciiz						 "#			 _______ _______ _______			#"
+Hud4:			.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ',' ','H',' ',' ',' ','|',' ',' ',' ','I',' ',' ',' ','|','	','	','	','#',0
+Hud5:			.byte						 '#','	','	','	','|',' ',' ',' ','D',' ',' ',' ','|',' ',' ',' ','E',' ',' ',' ','|',' ',' ',' ','F',' ',' ',' ','|','	','	','	','#',0
+Hud6:			.byte						 '#','	','	','	','|',' ',' ',' ','A',' ',' ',' ','|',' ',' ',' ','B',' ',' ',' ','|',' ',' ',' ','C',' ',' ',' ','|','	','	','	','#',0
+Hud7:			.asciiz						 "#			|_______|_______|_______|			#"
+Hud8: 			.asciiz						 "--------------------------------------------------------------Score:"
 
 NewLine:		.asciiz		"\n"
 
@@ -60,23 +60,23 @@ DuplicateList:		.byte		0:100
 
 main:
 	jal backendInit
-	#-------------------------------------------------------------------------------------------------------#
-	#					Word and Letter Setup						#				
-	#	Calls the letter generation and dictionary generation from the Backend.				#				
-	#-------------------------------------------------------------------------------------------------------#
 	
 	NewGame:
+		
+	#New Game Initialization
+	jal backendSearch		#Fetches a new list of letters and words
+	jal WriteHUD
 	
-	jal backendSearch
-	
-	li $s0,10			#Default Timer Setup
-	li $s1,0
-	li $s2,0
-	li $s3,0
+	li $s0,60			#Initialize Timer
+	li $s1,0			#Initialize Logic bits
+	li $s2,0			#Initialize Start Frame
+	li $s3,0			#Initialize Score
 
-	la $k0,Input
+	la $k0,Input			#Initialize Input Buffer
 	sb $zero,0($k0)
 
+	#Initialization COMPLETE: Proceed to start timer and enter main execution loop
+	
 	li $t0,0xffff0000		#Keyboard and Display MMIO Receiver RControl Register
 	lw $t1,0($t0)
 	ori $t1,$t1,0x00000002		#Check Bit Position 1 (Interrupt-Enable Bit) true
@@ -99,7 +99,6 @@ main:
 	jal DrawScreen
 
 	MainLoop:			#Standard waiting and time checking while player isn't providing input
-	
 	andi $t0,$s1,0x00000200		#Transfers the timer active bit
 	beq $t0,$zero,TimerOff		#Leave the timer alone if the timer is off, do not process time
 	jal CheckTime
@@ -201,68 +200,8 @@ CheckTime:
 	jr $ra
 	
 #---------------------------------------------------------------------------------------------------------------#
-#	Subroutine: DrawTimer											#
-#		Use: 		Draws the appropriate timer in five digits.					#
-#														#
-#		Inputs:		NONE										#
-#		Ouptuts: 	NONE										#
-#														#
-#---------------------------------------------------------------------------------------------------------------#
-		
-DrawTimer:
-	li $v0,11
-	li $a0,48
-
-	slti $t1,$s0,10000
-	bne $t1,$zero,NotFiveDigit
-	li $v0,1
-	move $a0,$s0
-	syscall
-	j TimerPrintDone
-	
-	NotFiveDigit:
-	syscall
-	
-	slti $t1,$s0,1000
-	bne $t1,$zero,NotFourDigit
-	li $v0,1
-	move $a0,$s0
-	syscall
-	j TimerPrintDone
-	
-	NotFourDigit:
-	syscall
-	
-	slti $t1,$s0,100
-	bne $t1,$zero,NotThreeDigit
-	li $v0,1
-	move $a0,$s0
-	syscall
-	j TimerPrintDone
-	
-	NotThreeDigit:
-	syscall
-	
-	slti $t1,$s0,10
-	bne $t1,$zero,NotTwoDigit
-	li $v0,1
-	move $a0,$s0
-	syscall
-	j TimerPrintDone
-	
-	NotTwoDigit:
-	syscall
-	li $v0,1
-	move $a0,$s0
-	syscall
-	
-	TimerPrintDone:
-	
-	jr $ra
-	
-#---------------------------------------------------------------------------------------------------------------#
-#	Subroutine: DrawScore											#
-#		Use: 		Draws the score with leading zeroes.						#
+#	Subroutine: DrawMeter											#
+#		Use: 		Draws a five digit meter with leading zeroes. Used for both time and score.	#
 #														#
 #		Inputs:		NONE										#
 #		Ouptuts: 	NONE										#
@@ -270,52 +209,52 @@ DrawTimer:
 #		NOTE: This could be fused with DrawTimer to make a more generic subroutine.			#
 #---------------------------------------------------------------------------------------------------------------#
 
-DrawScore:
-
+DrawMeter:
+	move $t0,$a0
 	li $v0,11
 	li $a0,48
 
-	slti $t1,$s3,10000
+	slti $t1,$t0,10000
 	bne $t1,$zero,ScoreNotFiveDigit
 	li $v0,1
-	move $a0,$s3
+	move $a0,$t0
 	syscall
 	j ScorePrintDone
 	
 	ScoreNotFiveDigit:
 	syscall
 	
-	slti $t1,$s3,1000
+	slti $t1,$t0,1000
 	bne $t1,$zero,ScoreNotFourDigit
 	li $v0,1
-	move $a0,$s3
+	move $a0,$t0
 	syscall
 	j ScorePrintDone
 	
 	ScoreNotFourDigit:
 	syscall
 	
-	slti $t1,$s3,100
+	slti $t1,$t0,100
 	bne $t1,$zero,ScoreNotThreeDigit
 	li $v0,1
-	move $a0,$s3
+	move $a0,$t0
 	syscall
 	j ScorePrintDone
 	
 	ScoreNotThreeDigit:
 	syscall
 	
-	slti $t1,$s3,10
+	slti $t1,$t0,10
 	bne $t1,$zero,ScoreNotTwoDigit
 	li $v0,1
-	move $a0,$s3
+	move $a0,$t0
 	syscall
 	j ScorePrintDone
 	
 	ScoreNotTwoDigit:
 	syscall
 	li $v0,1
-	move $a0,$s3
+	move $a0,$t0
 	syscall
 	
 	ScorePrintDone:
@@ -332,6 +271,8 @@ DrawScore:
 #---------------------------------------------------------------------------------------------------------------#
 
 DrawScreen:
+	addi $sp,$sp,-4			#Draw the appropriate timer
+	sw $ra,0($sp)
 	
 	li $v0,4
 	la $a0,NewLine
@@ -345,11 +286,8 @@ DrawScreen:
 	la $a0,Hud1
 	syscall
 	
-	addi $sp,$sp,-4			#Draw the appropriate timer
-	sw $ra,0($sp)
-	jal DrawTimer
-	lw $ra,0($sp)
-	addi $sp,$sp,4
+	move $a0,$s0
+	jal DrawMeter
 	
 	li $v0,4
 	la $a0,Hud1
@@ -427,11 +365,8 @@ DrawScreen:
 	la $a0,Hud8
 	syscall
 	
-	addi $sp,$sp,-4			#Draw the appropriate score
-	sw $ra,0($sp)
-	jal DrawScore
-	lw $ra,0($sp)
-	addi $sp,$sp,4
+	move $a0,$s3
+	jal DrawMeter
 	
 	li $v0,4
 	la $a0,NewLine
@@ -441,7 +376,46 @@ DrawScreen:
 	la $a0,Input
 	syscall
 	
+	lw $ra,0($sp)
+	addi $sp,$sp,4
 	jr $ra
+	
+#---------------------------------------------------------------------------------------------------------------#
+#	Subroutine: WriteHUD											#
+#		Use: 		Populates the hud elements with the letters in use.				#
+#														#
+#		Inputs:		NONE										#
+#		Ouptuts: 	NONE										#
+#														#
+#---------------------------------------------------------------------------------------------------------------#
+
+WriteHUD:
+
+	la $t0,Letters			#Write letters to display
+	la $t1,Hud6
+	lb $t2,0($t0)
+	sb $t2,8($t1)
+	lb $t2,1($t0)
+	sb $t2,16($t1)
+	lb $t2,2($t0)
+	sb $t2,24($t1)
+	lb $t2,3($t0)
+	la $t1,Hud5
+	sb $t2,8($t1)
+	lb $t2,4($t0)
+	sb $t2,16($t1)
+	lb $t2,5($t0)
+	sb $t2,24($t1)
+	lb $t2,6($t0)
+	la $t1,Hud4
+	sb $t2,8($t1)
+	lb $t2,7($t0)
+	sb $t2,16($t1)
+	lb $t2,8($t0)
+	sb $t2,24($t1)
+	
+	jr $ra
+
 
 Exit:
 
@@ -452,6 +426,10 @@ Exit:
 	#		Program jumps to these instructions upon interruption or trap				#
 	#													#				
 	#-------------------------------------------------------------------------------------------------------#
+
+.kdata
+
+Output1:		.asciiz		"Time Out!"
 
 .ktext 0x80000180
 
@@ -527,16 +505,18 @@ EnterEvent:
 	andi $k1,$k1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
 	sw $k1,0($k0)
 	
-	#andi $k0,$s1,0x00000400		#Transfers the waiting for reset bit
-	#bne $k0,$zero,RestartGame	#An enter while waiting for restart starts a new game
+	andi $k0,$s1,0x00000400		#Transfers the waiting for reset bit
+	bne $k0,$zero,RestartGame	#An enter while waiting for restart starts a new game
 	
 	la $k0,ScoreEntry		#Jump to section of the code that handles checking the string and input
 	mtc0 $k0,$14
+	eret
 	
-	#RestartGame:
-	#la $k0,NewGame		#Jump to section of the code that handles checking the string and input
-	#mtc0 $k0,$14
-
+	RestartGame:
+	la $k0,NewGame		#Jump to section of the code that handles checking the string and input
+	mtc0 $k0,$14
+	eret
+	
 	#-------------------------------#
 	#	Non-Implemented Key	#
 	#-------------------------------#
@@ -602,6 +582,4 @@ NotTimer:
 
 
 
-.kdata
 
-Output1:		.asciiz		"Time Out!"

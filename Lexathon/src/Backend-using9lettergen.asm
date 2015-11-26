@@ -7,13 +7,9 @@
 #  	            3. Third-Ninth letters are randomly generated	
 #		 Contains the "search" subroutine. This subroutine
 # 		 will search the specified dictionary for words that contains
-# 		 some or all of the characters in the provided string. This
-# 		 file is intented to be temporary, its contents should be
-# 		 merged with files containing other dictionary operations.					  
+# 		 some or all of the characters in the provided string					  
 #  --------------------------------------------------------------------------------
-.data
-#Letters: .space 10 # Will store the nine generated letters(Plus one null terminator)
-#Note: Letters stored in UserInput
+.data 
 
 histogram_list: .word 0, 0, 0 #Three words used for each character list's histogram
 				#IMPORTANT: Each word in "histogram_list" will only
@@ -34,35 +30,24 @@ nine_letter_words: .space 150000 #~150 KB
 	#					Global Labels							#				
 	#			Allows use of the following labels for use outside this file.			#				
 	#-------------------------------------------------------------------------------------------------------#
-.globl 	backendMain,backendSearch
+.globl 	backendInit,backendSearch
 
 .text
-#Main
-backendMain:
+
+backendInit:
 
 	addi $sp,$sp,-4
-	sw $ra,0($sp)
+	sw $ra, ($sp)
 
 	#Load 9 Letters to use for search
 	la $a0, file_name_9_letter
 	la $a1, nine_letter_words
 	jal loadFile
-	move $a0, $v1
-	jal genMain
-	
 
-	#Load file
+	#Load dictionary
 	la $a0, file_name_dictionary
 	la $a1, dictionary
 	jal loadFile
-	move $s0, $v0
-	move $s1, $v1
-	
-	li $v0, 30
-	syscall
-	move $s7, $a0
-	
-	jal backendSearch
 	
 	lw $ra,0($sp)
 	addi $sp,$sp,4
@@ -70,53 +55,26 @@ backendMain:
 	
 	
 	
-	#Gen randoms and search
+#Gen randoms and search
+# RETURNS:		$v0 = Number of words in "words" label
 backendSearch:
-	
 	addi $sp,$sp,-4
 	sw $ra,0($sp)
 	
-	jal genMain
-	la $s2, Letters
-	move $a0, $s1
-	move $a1, $s2
-	jal search
-	blt $v0, 15, backendSearch # used to make sure more than 15 words are found
-	
+	backendSearchLoop:
+		jal genMain
+		la $a0, dictionary
+		la $a1, Letters
+		jal search
+		blt $v0, 15, backendSearchLoop # used to make sure more than 15 words are found
 	
 	move $a0, $v0
 	jal add_Letters #Used to add nine letter word to wordlist
-	addi $v0, $v0, 1 #Incrument number of words by one
+	addi $v0, $v0, 1 #Increment number of words by one
 	
-	#AT THIS POINT $v0 CONTAINS THE NUMBER OF WORDS
-#DEBUGING CODE, ONLY UNCOMMENT FOR DEBUGIGING PURPOSES	
-#	move $a0, $v0
-#	li $v0, 1
-#	syscall
-#	
-#	li $a0, 10
-#	li $v0, 11
-#	syscall
-#	
-#	li $v0, 30
-#	syscall
-#	
-#	sub $a0, $a0, $s7
-#	li $v0, 1
-#	syscall
-	#DEBUGING CODE, ONLY UNCOMMENT FOR DEBUGIGING PURPOSES		
 	lw $ra,0($sp)
 	addi $sp,$sp,4
 	jr $ra
-	
-	#Exit
-	li $v0, 10
-	syscall
-	
-#remove_null:
-#	li $a0, 45
-#	syscall
-#	j print
 	
 
 # "loadFile" subroutine
@@ -129,7 +87,7 @@ backendSearch:
 #			SAME DIRECTORY as your MARS .jar!!!!!!!
 # RETURNS:		$v0 = Number of bytes read from the file, or -1 if failed
 #				to open the file.
-#			$v1 = Address of the label "dictionary".
+#			$v1 = Address of the data space.
 loadFile:
 	#Load address of space
 	move $t0, $a1
@@ -140,7 +98,7 @@ loadFile:
 	#Read the entire file and store in dictionary
 	move $a0, $v0
 	move $a1, $t0
-	li $a2, 450000
+	li $a2, 500000
 	li $v0, 14
 	syscall
 	#Move byte count
@@ -504,17 +462,18 @@ sw $s1, 0($sp)
 # Main Stuff
 la $s0, Letters # Load Letters address into $s0
 la $s1, nine_letter_words
+xor $a0, $a0, $a0 # Sets random number generator id to 0
 li $a1, 11619 # Sets upper bound of random number generation as 11619
 li $v0, 42 # Sets syscall to generate sudo-random number
 syscall # Result stored in $a0
 move $t0, $a0 #move random number to $t0
-# These next lines are for the bitwise multiplication by 10
-#sll $t1, $t0, 4 #Multiply by 16 (16x)
-#sll $t2, $t0, 2 #Multiply by 4 (4x)
-#sll $t3, $t0, 1 #Multiply by 2 (2x)
-#sub $t0, $t1, $t2 #$t0=$t1(16x)-$t2(4x)
-#sub $t0, $t0, $t3 #$t0=$t0(12x)-$t3(2x)
-mul $t0, $t0, 11
+# These next lines are for the bitwise multiplication by 11
+move $t1, $t0
+sll $t0, $t0, 3
+add $t0, $t1, $t0
+add $t0, $t1, $t0
+add $t0, $t1, $t0
+
 add $s1, $s1, $t0 # $s1 + random offset by 11 bytes
 
 #read the word
@@ -553,7 +512,7 @@ jr $ra
 #ARGUMENTS: $a0, number of words
 #Returns: None, directly operates on words
 #-------------------------------------------------------
-# Save $s0, and #s1 by convention
+# Save $s0, and $s1 by convention
 add_Letters:
 addi $sp, $sp -12
 sw $ra , 8($sp)

@@ -47,8 +47,8 @@ Input:			.byte		0:10
 Letters:		.byte		0:10
 words:			.space		1000		#100 10-Word Slots
 WordsUsed:		.byte		0:100		
-DuplicateList:		.byte		0:100		
-.globl		Letters,words,DuplicateList		
+DuplicateList:		.byte		0:100
+.globl		main,Letters,words,DuplicateList		
 
 #REGISTER USE:
 # $s0 - Timer (in seconds)
@@ -59,7 +59,7 @@ DuplicateList:		.byte		0:100
 .text
 
 main:
-	
+	jal backendInit
 	#-------------------------------------------------------------------------------------------------------#
 	#					Word and Letter Setup						#				
 	#	Calls the letter generation and dictionary generation from the Backend.				#				
@@ -67,7 +67,7 @@ main:
 	
 	NewGame:
 	
-	jal backendMain
+	jal backendSearch
 	
 	li $s0,10			#Default Timer Setup
 	li $s1,0
@@ -135,7 +135,7 @@ main:
 	
 	la $a0,Input
 	la $a1,words
-	jal StringCheck 		#Jumps to String Check subroutine by Daniel inf "stringCheck.asm"
+	jal StringCheck 		#Jumps to String Check subroutine by Daniel in "stringCheck.asm"
 					# v0 is now EITHER -1 if there was no match OR equal to the 
 					
 	slt $v0,$v0,$zero

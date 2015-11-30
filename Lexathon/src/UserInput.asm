@@ -84,11 +84,11 @@ main:
 	
 	ori $s1,$s1,0x00000200		#Checks true that the timer is active
 	
-	#-------------------------------------------------------------------------------------------------------#
-	#					Main Program Execution						#				
-	#	Setup should be completed before this point. Once the interruptable bit is saved, the		#
-	#	program will start executing interrupts.							#				
-	#-------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------#
+#					Main Program Execution						#				
+#	Setup should be completed before this point. Once the interruptable bit is saved, the		#
+#	program will start executing interrupts.							#				
+#-------------------------------------------------------------------------------------------------------#
 	
 	
 	li $v0, 30			#Fetches system time, miliseconds since Jan 1 1970
@@ -105,32 +105,36 @@ main:
 	
 	TimerOff:
 	
-	#-------------------------------------------------------------------------------------------------------#
-	#					Time Wasting Loop						#				#
-	#	Wastes a certain number of cycles on addition executions. These are desireable for their	#
-	#	consistent execution time.									#
-	#-------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------#
+#					Time Wasting Loop						#				#
+#	Wastes a certain number of cycles on addition executions. These are desireable for their	#
+#	consistent execution time.									#
+#-------------------------------------------------------------------------------------------------------#
 	
 	#NOTE: COULD BE OPTMIZED BY ADJUSTING CYLCE LENGTH TO DESIRED WAIT TIME ON PRESENT SYSTEM
 	
-	li $t5,450			#This value is ARBITRARY, measures 1 ms on Julian's computer but could be different for others!
+	li $t5,450
 	WasteTime:
 	addi $t5,$t5,-1
 	bne $t5,$zero,WasteTime
 	
 	j MainLoop
 	
-	#-------------------------------------------------------------------------------------------------------#
-	#					Scoring Logic							#			
-	#	The program jumps to this portion of the code in order to properly score input when entered.	#
-	#													#
-	#	NOTE: Time MUST be stopped to avoid interruption!						#	
-	#-------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------#
+#					Scoring Logic							#			
+#	The program jumps to this portion of the code in order to properly score input when entered.	#
+#													#
+#	NOTE: Time MUST be stopped to avoid interruption!						#	
+#-------------------------------------------------------------------------------------------------------#
 	
 	ScoreEntry:
 	
 	andi $k0,$s1,0x00000010		#Transfer 5th (the required input) use bit
 	beq $k0,$zero,NoMatch
+	
+	la $a0,Input
+	li $v0,4
+	syscall
 	
 	la $a0,Input
 	la $a1,words
@@ -140,7 +144,14 @@ main:
 	slt $v0,$v0,$zero
 	bne $v0,$zero,NoMatch
 	
-	# SUCCESS INDICATOR CODE HERE, PLAY A SOUND?
+	li $v0,31
+	li $a0,100
+	li $a1,500
+	li $a2,0
+	li $a3,30
+	syscall
+	
+	addi $s0,$s0,4
 	
 	NoMatch:
 	
@@ -545,6 +556,7 @@ NotKeyboard:	#Continue To Other Handlers
 	la $k0,words
 	addi $k1,$k0,1000
 	li $v0,11
+	li $v1,70
 	WordLoop:
 	lb $a0,0($k0)
 	syscall

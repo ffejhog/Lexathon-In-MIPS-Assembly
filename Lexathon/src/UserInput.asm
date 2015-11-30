@@ -142,10 +142,6 @@ main:
 	
 	# SUCCESS INDICATOR CODE HERE, PLAY A SOUND?
 	
-	li $v0,4
-	la $a0,Output1
-	syscall
-	
 	NoMatch:
 	
 	andi $s1,$s1,0xFFFFFE00		#Turns off first 9 bits (ie the input bits)
@@ -472,7 +468,6 @@ Output1:		.asciiz		"Time Out!"
 	add $k0,$k0,$a0
 	lb $a0,0($k0)
 	
-	#NOTE: COULD BE OPTIMIZED IF WE SAVE THE LENGTH OF INPUT
 	la $k0,Input			#Finds the end of the string. 
 	FindInput:
 	lb $k1,0($k0)
@@ -513,6 +508,11 @@ EnterEvent:
 	eret
 	
 	RestartGame:
+	li $k0,0xFFFF0000		#Keyboard and Display MMIO Receiver RControl Register
+	lw $k1,0($k0)
+	andi $k1,$k1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
+	sw $k1,0($k0)
+	
 	la $k0,NewGame		#Jump to section of the code that handles checking the string and input
 	mtc0 $k0,$14
 	eret
@@ -554,8 +554,6 @@ NotKeyboard:	#Continue To Other Handlers
 	
 	
 	WordsPrinted:
-	
-	
 	#############################################
 	
 	la $a0,NewLine

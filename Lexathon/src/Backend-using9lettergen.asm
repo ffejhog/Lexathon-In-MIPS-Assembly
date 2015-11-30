@@ -73,10 +73,10 @@ backendSearch:
 	addi $v0, $v0, 1 #Increment number of words by one
 	
 	#Swap 1st and 5th letters for input grid (disgusting hack)
-	lb $t0, (Letters)
-	lb $t1, 4(Letters)
-	sb $t0, 4(Letters)
-	sb $t1, (Letters)
+	lb $t0, Letters
+	lb $t1, Letters+4
+	sb $t0, Letters+4
+	sb $t1, Letters
 	
 	#Stack pointer and return
 	lw $ra,0($sp)

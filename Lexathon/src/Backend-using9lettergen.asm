@@ -359,14 +359,15 @@ histogram:
 	la $s1, histogram_list
 	#Clear histogram_list space
 	move $a0, $s1
-	li $a1, 12
+	li $a1, 10
 	jal clearSpace
 	#Loop through the 9 characters
 	histLoop0:
 		#Load character
 		lb $t2, ($s0)
-		#Break loop if character is null
+		#Break loop if character is null or carriage return
 		beq $t2, 0, histDone
+		beq $t2, 13, histDone
 		#Store alphabet index
 		subi $t3, $t2, 65
 		#Branch to modify whichever word contains char $t2

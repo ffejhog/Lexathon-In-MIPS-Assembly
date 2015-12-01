@@ -15,11 +15,12 @@
 -------------------------------------------------------------------------------------------------
 
 FEATURES:
-	This MIPS Assembly immplementation of Lexathon possesses all of the follow features:
+	This MIPS Assembly immplementation of Lexathon possesses all of the following features:
 		50000+ total possible words 
 		A grid based input that uses the numberpad for input
 		A fulling working timer that updates every second on the main game space
 		A scoring system that assigns a score based on the word that is correctly guessed
+		A MIDI based sound system that outputs a tone for each correct or incorrect word guess
 
 LIMITATIONS:
 		
@@ -36,6 +37,21 @@ INSTRUCTIONS:
 		5) In the open simulator, click "Connect to MIPS" in the lower left corner"
 		6) Assemble and run the program
 		7) To input your letter choices, select the bottom textbox in the "Keyboard and Display MMIO Simulator" then press the number on your numpad that coresponds
-		   to the box on the displayed grid containing the letter you wish to input next
-		8) To submit your word(After you have inputed each letter) press the enter key
+		   to the box on the displayed grid containing the letter you wish to input next(For more information see the section titled MMIO Simulator below)
+		8) To submit your word(After you have inputed each letter) enter the number 0.
 		
+MMIO SIMULATOR:
+		By inputing a specific number into the bottom textbox of the MMIO Simulator, you add the numbers corresponding letter to your current word. 
+		The diagram for which numbers correspond to each box on the grid is shown below(This will correspond to your keyboards numberpad, but if you do not have
+		a numberpad, you can use this guide below to see which numbers to input)
+		
+		 _______ _______ _______
+		|	|	|	|
+		|   7   |   8   |   9   |
+		|_______|_______|_______|
+		|	|	|	|
+		|   4   |   5   |   6   |
+		|_______|_______|_______|
+		|	|	|	|
+		|   1   |   2   |   3   |
+		|_______|_______|_______|

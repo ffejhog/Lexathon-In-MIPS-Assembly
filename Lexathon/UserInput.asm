@@ -55,7 +55,7 @@ main:
 	jal backendSearch		#Fetches a new list of letters and words
 	jal WriteHUD
 	
-	li $s0,5			#Initialize Timer
+	li $s0,60			#Initialize Timer
 	li $s1,0			#Initialize Logic bits
 	li $s2,0			#Initialize Start Frame
 	li $s3,0			#Initialize Score

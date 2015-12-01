@@ -13,31 +13,15 @@
 # |				Non-number inputs ignored			  |
 #  --------------------------------------------------------------------------------
 
-
-# MULTI FILE TUTORIAL:
-#	1) Go to Settings > Assemble All Files In Directory > TRUE
-#	2) Make sure that dictionary files are in your MARS folder!
-#	3) Go to Tools > Keyboard and Display MMIO Simulator
-#	3) In MMIO simulator, click button on bottom left "Connect to MIPS"
-#	4) You may run the program normally
-#
-#	NOTE: TIMER IS CURRENTLY SET AT 10 SECONDS FOR SWIFT DEBUGGING
-
-#	BELOW YOU WILL FIND SECTIONS WHERE I'VE MARKED WHERE EXTERNAL SUBROUTINES SHOULD BE RUN FEEL FREE TO INSERT THEM
-#	JUST REMEMBER THAT YOU NEED TO ADD ANY EXTERNAL LABELS YOU USE TO THE .globl FOUND AT THE TOP OF THE FILE WHERE
-#	IT EXISTS
-
-#	ALL BLOCKS WHERE CODE NEEDS INSERTING WILL BE MARKED "#INSERT BLOCK" SO YOU CAN USE CTRL+F TO FIND THEM
-
 .data
 
 Hud1:			.byte						 '-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',0
-Hud2:			.asciiz						 "#									#"
-Hud3:			.asciiz						 "#			 _______ _______ _______			#"
-Hud4:			.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ',' ','H',' ',' ',' ','|',' ',' ',' ','I',' ',' ',' ','|','	','	','	','#',0
-Hud5:			.byte						 '#','	','	','	','|',' ',' ',' ','D',' ',' ',' ','|',' ',' ',' ','E',' ',' ',' ','|',' ',' ',' ','F',' ',' ',' ','|','	','	','	','#',0
-Hud6:			.byte						 '#','	','	','	','|',' ',' ',' ','A',' ',' ',' ','|',' ',' ',' ','B',' ',' ',' ','|',' ',' ',' ','C',' ',' ',' ','|','	','	','	','#',0
-Hud7:			.asciiz						 "#			|_______|_______|_______|			#"
+Hud2:			.asciiz						 "#									#\n"
+Hud3:			.asciiz						 "#			 _______ _______ _______			#\n"
+Hud4:			.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ',' ','H',' ',' ',' ','|',' ',' ',' ','I',' ',' ',' ','|','	','	','	','#','\n',0
+Hud5:			.byte						 '#','	','	','	','|',' ',' ',' ','D',' ',' ',' ','|',' ',' ',' ','E',' ',' ',' ','|',' ',' ',' ','F',' ',' ',' ','|','	','	','	','#','\n',0
+Hud6:			.byte						 '#','	','	','	','|',' ',' ',' ','A',' ',' ',' ','|',' ',' ',' ','B',' ',' ',' ','|',' ',' ',' ','C',' ',' ',' ','|','	','	','	','#','\n',0
+Hud7:			.asciiz						 "#			|_______|_______|_______|			#\n"
 Hud8: 			.asciiz						 "--------------------------------------------------------------Score:"
 
 NewLine:		.asciiz		"\n"
@@ -45,7 +29,7 @@ NewLine:		.asciiz		"\n"
 Input:			.byte		0:10
 
 Letters:		.byte		0:10
-words:			.space		1000		#100 10-Word Slots
+words:			.byte		0:1001		#100 10-Letter Slots. End of list is double-terminated
 WordsUsed:		.byte		0:100		
 DuplicateList:		.byte		0:100
 .globl		main,Letters,words,DuplicateList		
@@ -61,13 +45,17 @@ DuplicateList:		.byte		0:100
 main:
 	jal backendInit
 	
+#-------------------------------------------------------------------------------------------------------#
+#					Initialization							#				
+#	This section initializes all the required elemetns for a new game.				#				
+#-------------------------------------------------------------------------------------------------------#
+	
 	NewGame:
 		
-	#New Game Initialization
 	jal backendSearch		#Fetches a new list of letters and words
 	jal WriteHUD
 	
-	li $s0,60			#Initialize Timer
+	li $s0,5			#Initialize Timer
 	li $s1,0			#Initialize Logic bits
 	li $s2,0			#Initialize Start Frame
 	li $s3,0			#Initialize Score
@@ -89,7 +77,6 @@ main:
 #	Setup should be completed before this point. Once the interruptable bit is saved, the		#
 #	program will start executing interrupts.							#				
 #-------------------------------------------------------------------------------------------------------#
-	
 	
 	li $v0, 30			#Fetches system time, miliseconds since Jan 1 1970
 	syscall
@@ -133,27 +120,30 @@ main:
 	beq $k0,$zero,NoMatch
 	
 	la $a0,Input
-	li $v0,4
-	syscall
-	
-	la $a0,Input
 	la $a1,words
 	jal StringCheck 		#Jumps to String Check subroutine by Daniel in "stringCheck.asm"
-					# v0 is now EITHER -1 if there was no match OR equal to the 
-					
+					# v0 is now EITHER -1 if there was no match OR equal to the 			
+													
 	slt $v0,$v0,$zero
 	bne $v0,$zero,NoMatch
 	
-	li $v0,31
-	li $a0,100
-	li $a1,500
-	li $a2,0
-	li $a3,30
-	syscall
+	li $a0,100			#Tone pitch
 	
 	addi $s0,$s0,4
 	
+	j EndScore
+	
 	NoMatch:
+	
+	li $a0,27			#Tone pitch
+	
+	EndScore:
+	
+	li $v0,31			#Play Midi tone function
+	li $a1,500			#Milisecond Length
+	li $a2,0			#Tone type
+	li $a3,60			#Tone volume
+	syscall
 	
 	andi $s1,$s1,0xFFFFFE00		#Turns off first 9 bits (ie the input bits)
 	
@@ -284,12 +274,8 @@ DrawScreen:
 	li $v0,4
 	la $a0,NewLine
 	syscall
-	
-	li $v0,4
-	la $a0,NewLine
 	syscall
 	
-	li $v0,4
 	la $a0,Hud1
 	syscall
 	
@@ -300,75 +286,33 @@ DrawScreen:
 	la $a0,Hud1
 	syscall
 	
-	li $v0,4
 	la $a0,NewLine
 	syscall
 	
-	li $v0,4
 	la $a0,Hud2
 	syscall
-	
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
+
 	la $a0,Hud3
 	syscall	
 			
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
 	la $a0,Hud4
 	syscall			
-					
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
+
 	la $a0,Hud7
 	syscall
 	
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
 	la $a0,Hud5
 	syscall					
-	
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
+
 	la $a0,Hud7
 	syscall
-	
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
+
 	la $a0,Hud6
 	syscall
-	
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
+
 	la $a0,Hud7
 	syscall
-	
-	li $v0,4
-	la $a0,NewLine
-	syscall
-	
-	li $v0,4
+
 	la $a0,Hud8
 	syscall
 	
@@ -379,7 +323,6 @@ DrawScreen:
 	la $a0,NewLine
 	syscall
 	
-	li $v0,4
 	la $a0,Input
 	syscall
 	
@@ -398,7 +341,7 @@ DrawScreen:
 
 WriteHUD:
 
-	la $t0,Letters			#Write letters to display
+	la $t0,Letters			#Write Letters to display HUD elements
 	la $t1,Hud6
 	lb $t2,0($t0)
 	sb $t2,8($t1)
@@ -427,16 +370,17 @@ WriteHUD:
 Exit:
 
 
-	#-------------------------------------------------------------------------------------------------------#
-	#					Exception Section						#				
-	#													#
-	#		Program jumps to these instructions upon interruption or trap				#
-	#													#				
-	#-------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------#
+#					Exception Section						#				
+#													#
+#		Program jumps to these instructions upon interruption or trap				#
+#													#				
+#-------------------------------------------------------------------------------------------------------#
 
 .kdata
 
-Output1:		.asciiz		"Time Out!"
+Output1:		.asciiz		"				GAME OVER\n"
+Output2:		.asciiz		"			Hit the zero key to play again!"
 
 .ktext 0x80000180
 
@@ -524,6 +468,13 @@ EnterEvent:
 	andi $k1,$k1,0xFFFFFFFD		#Check Bit Position 1 (Interrupt-Enable Bit) FALSE (Disables interrupts)
 	sw $k1,0($k0)
 	
+	li $v0,31			#Play Midi tone function
+	li $a0,85			#Tone pitch
+	li $a1,500			#Milisecond Length
+	li $a2,0			#Tone type
+	li $a3,60			#Tone volume
+	syscall
+	
 	la $k0,NewGame		#Jump to section of the code that handles checking the string and input
 	mtc0 $k0,$14
 	eret
@@ -543,32 +494,54 @@ NotKeyboard:	#Continue To Other Handlers
 	li $k1,0x00000034		#This is the bit pattern for the timer trap
 	bne $k0,$k1,NotTimer
 	
+	li $v0,4			#Printing timeout announcement.
+	la $a0,NewLine
+	syscall
+	
+	la $a0,Output1			#Timeout text and instructions
+	syscall
+	
+		#---------------------------------------#
+		#	Print Word List on Timeout	#
+		#---------------------------------------#
+	
+		la $k0,words
+		addi $k1,$k0,70
+		li $v0,11
+	
+		WordLoop1:			#Basic chech pulls character byte and prints it unless it is null
+		lb $a0,0($k0)
+		beq $a0,$zero,WordLoopNull
+		syscall
+		addi $k0,$k0,1
+		j WordLoop1
+	
+		WordLoopNull:			#Jump here upon detecting the first null character
+		lb $a0,1($k0)
+		beq $a0,$zero,EndWordLoop	#A second null terminator means the list is done
+		slt $a0,$k0,$k1
+		beq $a0,$zero,WordLoopEndline	#If the line is full, then we need to return, but otherwise begin a new word
+		addi $k0,$k0,1
+		li $a0,44
+		syscall
+		j WordLoop1
+	
+		WordLoopEndline:		#Adds a newline to the list and increments k1 and k0
+		li $a0,44
+		syscall
+		lb $a0,NewLine
+		syscall
+		addi $k1,$k1,70
+		addi $k0,$k0,1
+		j WordLoop1
+	
+		EndWordLoop:
+	
 	li $v0,4
-	la $a0,Output1
-	syscall
-	
 	la $a0,NewLine
 	syscall
-	
-	#############################################
-	#	PRINT WORDLIST HERE
-	#	NOTE: THIS IS NOT FINAL ONLY FOR DEBUG PURPOSES WHILE CONFIGURATION IS FINALIZED
-	la $k0,words
-	addi $k1,$k0,1000
-	li $v0,11
-	li $v1,70
-	WordLoop:
-	lb $a0,0($k0)
 	syscall
-	addi $k0,$k0,1
-	beq $k0,$k1,WordsPrinted
-	j WordLoop
-	
-	
-	WordsPrinted:
-	#############################################
-	
-	la $a0,NewLine
+	la $a0,Output2
 	syscall
 	
 	andi $s1,$s1,0xFFFFFDFF		#Switch timer bit off, stopping the timer
@@ -587,9 +560,3 @@ NotTimer:
 	mtc0 $k0,$14
 
 	eret
-
-
-
-
-
-

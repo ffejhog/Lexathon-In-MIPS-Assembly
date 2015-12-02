@@ -22,7 +22,10 @@ Hud4:			.byte						 '#','	','	','	','|',' ',' ',' ','G',' ',' ',' ','|',' ',' ',
 Hud5:			.byte						 '#','	','	','	','|',' ',' ',' ','D',' ',' ',' ','|',' ',' ',' ','E',' ',' ',' ','|',' ',' ',' ','F',' ',' ',' ','|','	','	','	','#','\n',0
 Hud6:			.byte						 '#','	','	','	','|',' ',' ',' ','A',' ',' ',' ','|',' ',' ',' ','B',' ',' ',' ','|',' ',' ',' ','C',' ',' ',' ','|','	','	','	','#','\n',0
 Hud7:			.asciiz						 "#			|_______|_______|_______|			#\n"
-Hud8: 			.asciiz						 "--------------------------------------------------------------Score:"
+Hud8: 			.asciiz						 "Tries:"
+Hud9:			.asciiz						 "-------------------------------------------------------Score:"
+
+LoadingPrompt:		.asciiz		"Loading...\n"
 
 NewLine:		.asciiz		"\n"
 
@@ -32,7 +35,7 @@ Letters:		.byte		0:10
 words:			.byte		0:2001		#100 10-Letter Slots. End of list is double-terminated
 WordsUsed:		.byte		0:100		
 DuplicateList:		.byte		0:100
-LoadingPrompt:		.asciiz		"Loading...\n"
+
 .globl		main,Letters,words,DuplicateList		
 
 #REGISTER USE:
@@ -40,11 +43,16 @@ LoadingPrompt:		.asciiz		"Loading...\n"
 # $s1 - Logic Bits (0-8: Input Bits, 9: Timer On, 10: Waiting For Reset, 11-31 UNUSED)
 # $s2 - Start Frame (when timer was last checked)
 # $s3 - User Score
+# $s4 - Total Possible Words
+# $s5 - Number of tries left
+# $s6 - Number of cycles to allow wasted time between clock checks
 
 .text
 
 main:
 	jal backendInit
+	
+	li $s5,450			#Initialize cycle skips
 	
 #-------------------------------------------------------------------------------------------------------#
 #					Initialization							#				
@@ -65,6 +73,9 @@ main:
 	li $s1,0			#Initialize Logic bits
 	li $s2,0			#Initialize Start Frame
 	li $s3,0			#Initialize Score
+	#s4 is set by Backend
+	li $s5,3			#Initialize number of tries
+	#s6 is initialized above so it only sets once
 
 	la $k0,Input			#Initialize Input Buffer
 	sb $zero,0($k0)
@@ -104,9 +115,7 @@ main:
 #	consistent execution time.									#
 #-------------------------------------------------------------------------------------------------------#
 	
-	#NOTE: COULD BE OPTMIZED BY ADJUSTING CYLCE LENGTH TO DESIRED WAIT TIME ON PRESENT SYSTEM
-	
-	li $t5,450
+	move $t5,$s6
 	WasteTime:
 	addi $t5,$t5,-1
 	bne $t5,$zero,WasteTime
@@ -137,11 +146,17 @@ main:
 	
 	addi $s0,$s0,4
 	
+	beq $s3,$s4,EndGame		#Game ends if all words are found
+	
 	j EndScore
 	
 	NoMatch:
 	
 	li $a0,27			#Tone pitch
+	
+	addi $s5,$s5,-1			#Takes a strike and checks if the game needs to end.
+	
+	beq $s5,$zero,EndGame
 	
 	EndScore:
 	
@@ -165,6 +180,10 @@ main:
 	
 	j Redraw
 	
+	EndGame:
+	li $s0,1			#Force the clock to timeout on next check
+	li $s2,0
+	j EndScore
 
 #---------------------------------------------------------------------------------------------------------------#
 #	Subroutine: CheckTime											#
@@ -198,15 +217,21 @@ CheckTime:
 	
 	tlti $s0,1			#Generate a trap if the timer has run out
 	
+	addi $s6,$s6,-10		#Wait for 10 fewer cycles next time, this ensures that the computer will find steady
+					#	execution equilibrium.
+	
+	jr $ra				#Return to program after incrementing time
+	
 	NoFullSecond:
 	
+	addi $s6,$s6,10			#Wait for 10 more cycles next time
 	jr $ra
 	
 #---------------------------------------------------------------------------------------------------------------#
 #	Subroutine: DrawMeter											#
 #		Use: 		Draws a five digit meter with leading zeroes. Used for both time and score.	#
 #														#
-#		Inputs:		NONE										#
+#		Inputs:		$a0 : the number to draw, $a1 : number of drawn digits (max 5)			#
 #		Ouptuts: 	NONE										#
 #														#
 #		NOTE: This could be fused with DrawTimer to make a more generic subroutine.			#
@@ -215,54 +240,68 @@ CheckTime:
 DrawMeter:
 	move $t0,$a0
 	li $v0,11
-	li $a0,48
+	li $a0,48		#Character '0'
+	
+	beq $a1,4,FormatFourDigit
+	beq $a1,3,FormatThreeDigit
+	beq $a1,2,FormatTwoDigit
+	beq $a1,1,FormatOneDigit
 
 	slti $t1,$t0,10000
-	bne $t1,$zero,ScoreNotFiveDigit
+	bne $t1,$zero,MeterNotFiveDigit
 	li $v0,1
 	move $a0,$t0
 	syscall
-	j ScorePrintDone
+	j MeterPrintDone
 	
-	ScoreNotFiveDigit:
+	MeterNotFiveDigit:
 	syscall
+	
+	FormatFourDigit:
 	
 	slti $t1,$t0,1000
-	bne $t1,$zero,ScoreNotFourDigit
+	bne $t1,$zero,MeterNotFourDigit
 	li $v0,1
 	move $a0,$t0
 	syscall
-	j ScorePrintDone
+	j MeterPrintDone
 	
-	ScoreNotFourDigit:
+	MeterNotFourDigit:
 	syscall
+	
+	FormatThreeDigit:
 	
 	slti $t1,$t0,100
-	bne $t1,$zero,ScoreNotThreeDigit
+	bne $t1,$zero,MeterNotThreeDigit
 	li $v0,1
 	move $a0,$t0
 	syscall
-	j ScorePrintDone
+	j MeterPrintDone
 	
-	ScoreNotThreeDigit:
+	MeterNotThreeDigit:
 	syscall
+	
+	FormatTwoDigit:
 	
 	slti $t1,$t0,10
-	bne $t1,$zero,ScoreNotTwoDigit
+	bne $t1,$zero,MeterNotTwoDigit
 	li $v0,1
 	move $a0,$t0
 	syscall
-	j ScorePrintDone
+	j MeterPrintDone
 	
-	ScoreNotTwoDigit:
+	MeterNotTwoDigit:
 	syscall
+	
+	FormatOneDigit:
 	li $v0,1
 	move $a0,$t0
 	syscall
 	
-	ScorePrintDone:
+	MeterPrintDone:
 	
 	jr $ra
+
 
 #---------------------------------------------------------------------------------------------------------------#
 #	Subroutine: DrawScreen											#
@@ -286,6 +325,7 @@ DrawScreen:
 	syscall
 	
 	move $a0,$s0
+	li $a1,5
 	jal DrawMeter
 	
 	li $v0,4
@@ -322,7 +362,24 @@ DrawScreen:
 	la $a0,Hud8
 	syscall
 	
+	move $a0,$s5
+	li $a1,1
+	jal DrawMeter
+	
+	li $v0,4
+	la $a0,Hud9
+	syscall
+	
 	move $a0,$s3
+	li $a1,2
+	jal DrawMeter
+	
+	li $v0,11
+	li $a0,47
+	syscall
+	
+	move $a0,$s4
+	li $a1,2
 	jal DrawMeter
 	
 	li $v0,4

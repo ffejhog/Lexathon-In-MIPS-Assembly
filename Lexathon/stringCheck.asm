@@ -69,7 +69,7 @@ StrMatch:
 
 move $v0, $t2	# returns the length of the input
 
-add $s3, $s3, $t2	# adds the length of the correct word to the total score
+addi $s3, $s3, 1	# adds the length of the correct word to the total score
 
 jr $ra
 

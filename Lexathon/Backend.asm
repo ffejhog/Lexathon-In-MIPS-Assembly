@@ -68,6 +68,7 @@ backendSearch:
 		jal search
 		blt $v0, 15, backendSearchLoop # used to make sure more than 15 words are found
 	
+	move $s4,$v0	#JULIAN save the number of words found
 	move $a0, $v0
 	jal add_Letters #Used to add nine letter word to wordlist
 	addi $v0, $v0, 1 #Increment number of words by one

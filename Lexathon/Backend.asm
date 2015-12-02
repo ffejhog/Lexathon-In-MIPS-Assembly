@@ -149,7 +149,7 @@ search:
 	la $s2, words
 	#Clear our word space
 	move $a0, $s2
-	li $a1, 1000
+	li $a1, 2001
 	jal clearSpace
 	
 	#Create histogram and store its address

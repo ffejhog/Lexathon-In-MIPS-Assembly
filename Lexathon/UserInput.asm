@@ -29,9 +29,10 @@ NewLine:		.asciiz		"\n"
 Input:			.byte		0:10
 
 Letters:		.byte		0:10
-words:			.byte		0:1001		#100 10-Letter Slots. End of list is double-terminated
+words:			.byte		0:2001		#100 10-Letter Slots. End of list is double-terminated
 WordsUsed:		.byte		0:100		
 DuplicateList:		.byte		0:100
+LoadingPrompt:		.asciiz		"Loading...\n"
 .globl		main,Letters,words,DuplicateList		
 
 #REGISTER USE:
@@ -51,7 +52,12 @@ main:
 #-------------------------------------------------------------------------------------------------------#
 	
 	NewGame:
-		
+	
+	#Let the user know the game is loading
+	la $a0, LoadingPrompt
+	li $v0, 4
+	syscall
+	
 	jal backendSearch		#Fetches a new list of letters and words
 	jal WriteHUD
 	
@@ -380,7 +386,7 @@ Exit:
 .kdata
 
 Output1:		.asciiz		"				GAME OVER\n"
-Output2:		.asciiz		"			Hit the zero key to play again!"
+Output2:		.asciiz		"			Hit the zero key to play again!\n"
 
 .ktext 0x80000180
 

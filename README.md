@@ -5,6 +5,9 @@
 ### Lexathon 
 Contains source for MIPS assembly based code for the project. 
 
+### ReportsandStuff 
+Contains the video, README, and general team report for the project
+
 ### Wordlists 
 Contains the wordlist file for this project.
 

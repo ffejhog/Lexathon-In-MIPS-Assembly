@@ -19,8 +19,10 @@ FEATURES:
 		50000+ total possible words 
 		A grid based input that uses the numberpad for input
 		A fulling working timer that updates every second on the main game space
-		A scoring system that assigns a score based on the word that is correctly guessed
+		A scoring system that assigns a score based on the length of the word that is correctly guessed
 		A MIDI based sound system that outputs a tone for each correct or incorrect word guess
+		A main loop that allows to game to be replayed without the need for its re-assembly
+
 
 LIMITATIONS:
 		
@@ -28,7 +30,8 @@ LIMITATIONS:
 KNOWN ISSUES:
 		-	The MARS simulator has a tendancy to slow down program execution time dramatiacally after a program has been assembled a few times.
 			If the game is taking a long time to load, close MARS fully and reopen the program, this should correct the issue.
-
+		-	On rare occassions there may be words which are immpossible to get with the letters provided that show up in the list of all possible
+			words after a round is complete
 INSTRUCTIONS:
 		1) Copy the files Wordlist.txt and dictionary_9_letter_words.txt to the same directory that your MARS.jar file is located(Program will not work otherwise)
 		2) In MARS, open the file titled UserInput.asm

@@ -51,7 +51,6 @@ DuplicateList:		.byte		0:100
 
 main:
 	jal backendInit
-	
 	li $s5,450			#Initialize cycle skips
 	
 #-------------------------------------------------------------------------------------------------------#
@@ -67,13 +66,13 @@ main:
 	syscall
 	
 	jal backendSearch		#Fetches a new list of letters and words
+	move $s4,$v0			#Save the number of words found
 	jal WriteHUD
 	
 	li $s0,60			#Initialize Timer
 	li $s1,0			#Initialize Logic bits
 	li $s2,0			#Initialize Start Frame
 	li $s3,0			#Initialize Score
-	#s4 is set by Backend
 	li $s5,3			#Initialize number of tries
 	#s6 is initialized above so it only sets once
 

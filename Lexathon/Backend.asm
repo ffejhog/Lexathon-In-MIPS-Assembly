@@ -148,9 +148,9 @@ search:
 	#Load in the word space
 	la $s2, words
 	#Clear our word space
-	move $a0, $s2
-	li $a1, 2001
-	jal clearSpace
+	#move $a0, $s2
+	#li $a1, 2001
+	#jal clearSpace
 	
 	#Create histogram and store its address
 	move $a0, $s1
@@ -565,6 +565,8 @@ lb $t0, 7($s1)
 sb $t0, 7($s0)
 lb $t0, 8($s1)
 sb $t0, 8($s0)
+sb $zero, 9($s0)
+sb $zero, 10($s0)
 #lb $t0, 9($s1)
 #sb $t0, 9($s0)
 

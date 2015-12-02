@@ -24,14 +24,12 @@ FEATURES:
 		A main loop that allows to game to be replayed without the need for its re-assembly
 
 
-LIMITATIONS:
-		
-
 KNOWN ISSUES:
 		-	The MARS simulator has a tendancy to slow down program execution time dramatiacally after a program has been assembled a few times.
 			If the game is taking a long time to load, close MARS fully and reopen the program, this should correct the issue.
 		-	On rare occassions there may be words which are immpossible to get with the letters provided that show up in the list of all possible
 			words after a round is complete
+
 INSTRUCTIONS:
 		1) Copy the files Wordlist.txt and dictionary_9_letter_words.txt to the same directory that your MARS.jar file is located(Program will not work otherwise)
 		2) In MARS, open the file titled UserInput.asm
@@ -42,6 +40,7 @@ INSTRUCTIONS:
 		7) To input your letter choices, select the bottom textbox in the "Keyboard and Display MMIO Simulator" then press the number on your numpad that coresponds
 		   to the box on the displayed grid containing the letter you wish to input next(For more information see the section titled MMIO Simulator below)
 		8) To submit your word(After you have inputed each letter) enter the number 0.
+
 		
 MMIO SIMULATOR:
 		By inputing a specific number into the bottom textbox of the MMIO Simulator, you add the numbers corresponding letter to your current word. 

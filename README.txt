@@ -59,3 +59,5 @@ MMIO SIMULATOR:
 									|	|	|	|
 									|   1   |   2   |   3   |
 									|_______|_______|_______|
+
+An alternative link for the video https://www.youtube.com/watch?v=gXzclsBhJEo

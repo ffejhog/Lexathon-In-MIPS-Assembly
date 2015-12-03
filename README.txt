@@ -12,23 +12,25 @@
 |			Lexathon/UserInput.asm							|
 |			Wordlists/Wordlist.txt							|
 |			Wordlists/dictionary_9_letter_words.txt					|
+|			Report-Video/ReportQuestions.docx					|
+|			Report-Video/DemoVideo.mp4						|
 -------------------------------------------------------------------------------------------------
 
 FEATURES:
 	This MIPS Assembly immplementation of Lexathon possesses all of the following features:
-		50000+ total possible words 
-		A grid based input that uses the numberpad for input
-		A fulling working timer that updates every second on the main game space
-		A scoring system that assigns a score based on the length of the word that is correctly guessed
-		A MIDI based sound system that outputs a tone for each correct or incorrect word guess
-		A main loop that allows to game to be replayed without the need for its re-assembly
+		-  50000+ total possible words 
+		-  A grid based input that uses the numberpad for input
+		-  A fulling working timer that updates every second on the main game space
+		-  A scoring system that assigns a score based on the length of the word that is correctly guessed
+		-  A MIDI based sound system that outputs a tone for each correct or incorrect word guess
+		-  A main loop that allows to game to be replayed without the need for its re-assembly
 
 
 KNOWN ISSUES:
-		-	The MARS simulator has a tendancy to slow down program execution time dramatiacally after a program has been assembled a few times.
-			If the game is taking a long time to load, close MARS fully and reopen the program, this should correct the issue.
-		-	On rare occassions there may be words which are immpossible to get with the letters provided that show up in the list of all possible
-			words after a round is complete
+		-  The MARS simulator has a tendancy to slow down program execution time dramatiacally after a program has been assembled a few times.
+		   If the game is taking a long time to load, close MARS fully and reopen the program, this should correct the issue.
+		-  On rare occassions there may be words which are immpossible to get with the letters provided that show up in the list of all possible
+		   words after a round is complete
 
 INSTRUCTIONS:
 		1) Copy the files Wordlist.txt and dictionary_9_letter_words.txt to the same directory that your MARS.jar file is located(Program will not work otherwise)
@@ -43,17 +45,17 @@ INSTRUCTIONS:
 
 		
 MMIO SIMULATOR:
-		By inputing a specific number into the bottom textbox of the MMIO Simulator, you add the numbers corresponding letter to your current word. 
-		The diagram for which numbers correspond to each box on the grid is shown below(This will correspond to your keyboards numberpad, but if you do not have
-		a numberpad, you can use this guide below to see which numbers to input)
+		   By inputing a specific number into the bottom textbox of the MMIO Simulator, you add the numbers corresponding letter to your current word. 
+		   The diagram for which numbers correspond to each box on the grid is shown below(This will correspond to your keyboards numberpad, but if you do not have
+		   a numberpad, you can use this guide below to see which numbers to input)
 		
-		 _______ _______ _______
-		|	|	|	|
-		|   7   |   8   |   9   |
-		|_______|_______|_______|
-		|	|	|	|
-		|   4   |   5   |   6   |
-		|_______|_______|_______|
-		|	|	|	|
-		|   1   |   2   |   3   |
-		|_______|_______|_______|
+									 _______ _______ _______
+									|	|	|	|
+									|   7   |   8   |   9   |
+									|_______|_______|_______|
+									|	|	|	|
+									|   4   |   5   |   6   |
+									|_______|_______|_______|
+									|	|	|	|
+									|   1   |   2   |   3   |
+									|_______|_______|_______|
